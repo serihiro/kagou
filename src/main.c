@@ -10,6 +10,7 @@
 #include <unistd.h>
 #include <time.h>
 #include <signal.h>
+#include <math.h>
 
 #define BUFFERSIZE  1024
 
@@ -35,7 +36,7 @@ void formated_system_datetime(char *ret, char *format) {
     strcpy(ret, buf);
 }
 
-void header(char *ret){
+void header(char *ret, int content_length){
     struct tm *t_st;
     time_t tt;
 
@@ -50,7 +51,9 @@ void header(char *ret){
     strcat(header_buffer, "Server: kagou\n");
     strcat(header_buffer, "Connection: close\n");
     strcat(header_buffer, "Content-type: text/html\n");
-    strcat(header_buffer, "Content-length: 53\n");
+    char content_length_content[16 + (int)ceil(log10(content_length))];
+    sprintf(content_length_content, "Content-length: %d\n", content_length);
+    strcat(header_buffer, content_length_content);
 
     strcpy(ret, header_buffer);
 }
@@ -134,9 +137,9 @@ int main(int argc, char ** argv) {
             }
 
             char contents[4048];
-            header(contents);
-            strcat(contents, "\n");
             char *body = "<html><head></head><body>Hello, world!</body></html>\n";
+            header(contents, strlen(body));
+            strcat(contents, "\n");
             strcat(contents, body);
 
             int send_message_size = send(accept_socket_fd, contents, sizeof(contents), 0);
