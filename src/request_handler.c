@@ -1,4 +1,5 @@
 #include "./request_handler.h"
+#define HEADER_DATE_FORMAT "%a, %d %b %Y %H:%M:%S GMT"
 
 static struct tm *local_time() {
     struct tm *t_st;
@@ -26,7 +27,7 @@ void header(char *ret, int content_length){
     time(&tt);
     t_st = localtime(&tt);
     char systime[128];
-    formated_system_datetime(systime, "%a, %d %b %Y %H:%M:%S GMT");
+    formated_system_datetime(systime, HEADER_DATE_FORMAT);
 
     char header_buffer[1024] = "HTTP/1.1 200 OK\nDate: ";
     strcat(header_buffer, systime);
