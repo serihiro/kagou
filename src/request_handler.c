@@ -22,3 +22,31 @@ void header(char *ret, int content_length){
 
     strcpy(ret, header_buffer);
 }
+
+void load_body(char *ret, char *file_path) {
+    struct stat st;
+    int stat_result;
+    stat_result = stat(file_path, &st);
+    if(stat_result != 0){
+        perror("Target file does not exist");
+        return;
+    }
+
+    FILE *target_file;
+    target_file = fopen(file_path, "r");
+    if (target_file == NULL) {
+        perror("Failed to fopen target file");
+        return;
+     }
+
+     fpos_t fsize = 0;
+     fseek(target_file, 0, SEEK_END);
+     fgetpos(target_file, &fsize);
+     rewind(target_file);
+
+     char buf[fsize];
+     fgets(buf, fsize, target_file);
+     fclose(target_file);
+
+     strcpy(ret, buf);
+}

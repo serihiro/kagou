@@ -50,6 +50,7 @@ int main(int argc, char ** argv) {
     memset(&server_address, 0, sizeof(server_address));
     server_address.sin_family = PF_INET;
     server_address.sin_port   = htons(atoi(argv[1]));
+    signal(SIGPIPE, SIG_IGN);
 
     int bind_result = bind(request_socket_fd, (struct sockaddr *)&server_address, sizeof(struct sockaddr_in));
     if(bind_result < 0) {
@@ -81,29 +82,23 @@ int main(int argc, char ** argv) {
         while(1) {
             memset(&buf, 0, sizeof(buf));
             int recv_message_size = recv(accept_socket_fd, buf, BUFFERSIZE, 0);
-            if (!recv_message_size) {
+            if (!recv_message_size || recv_message_size < 0) {
                 close(accept_socket_fd);
                 break;
             }
-            if (recv_message_size < 0) {
-                perror("Failed to recv");
-                close(accept_socket_fd);
-                close(request_socket_fd);
-                exit(1);
-            }
 
-            char contents[4048];
-            char *body = "<html><head></head><body>Hello, world!</body></html>\n";
+            // If using malloc, somehow this cannot send response..
+            char contents[1024 * 1000];
+            char body[1024 * 500];
+            load_body(body, "test.html");
             header(contents, strlen(body));
             strcat(contents, "\n");
             strcat(contents, body);
 
             int send_message_size = send(accept_socket_fd, contents, sizeof(contents), 0);
             if(send_message_size < 0) {
-                perror("Failed to send");
                 close(accept_socket_fd);
-                close(request_socket_fd);
-                exit(1);
+                break;
             }
         }
     }
