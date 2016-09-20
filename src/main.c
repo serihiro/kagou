@@ -90,7 +90,7 @@ int main(int argc, char ** argv) {
             // If using malloc, somehow this cannot send response..
             char contents[1024 * 1000];
             char body[1024 * 500];
-            load_body(body, "test.html");
+            load_body(body, "test/test.html");
             header(contents, strlen(body));
             strcat(contents, "\n");
             strcat(contents, body);

@@ -23,6 +23,8 @@ void header(char *ret, int content_length){
     strcpy(ret, header_buffer);
 }
 
+int ROW_BUFFER = 4096;
+
 void load_body(char *ret, char *file_path) {
     struct stat st;
     int stat_result;
@@ -44,9 +46,15 @@ void load_body(char *ret, char *file_path) {
      fgetpos(target_file, &fsize);
      rewind(target_file);
 
-     char buf[fsize];
-     fgets(buf, fsize, target_file);
+     char fbuf[fsize + 1];
+     char rbuf[ROW_BUFFER];
+     memset(&fbuf, 0, sizeof(fbuf));
+     memset(&rbuf, 0, sizeof(rbuf));
+     // 1行ごとの長さ取ってbuffer作ってstrcatでくっつける
+     while(fgets(rbuf, fsize, target_file) != NULL){
+         strcat(fbuf, rbuf);
+     }
      fclose(target_file);
 
-     strcpy(ret, buf);
+     strcpy(ret, fbuf);
 }
