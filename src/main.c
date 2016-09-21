@@ -10,6 +10,7 @@
 #include "./request_handler.h"
 
 #define BUFFERSIZE  1024
+#define DEFAULT_ROOT_DIRECTORY "."
 
 int accept_socket_fd;
 int request_socket_fd;
@@ -27,8 +28,14 @@ void sigint_handler(int signum){
 
 int main(int argc, char ** argv) {
     if(argc < 2) {
-        puts("Usage: /path/to/binary port");
+        puts("Usage: /path/to/binary *port root_file_directory");
         exit(1);
+    }
+    char root_directory[BUFFERSIZE];
+    if(argc == 3) {
+        strcpy(root_directory, argv[2]);
+    }else{
+        strcpy(root_directory, DEFAULT_ROOT_DIRECTORY);
     }
 
     struct sigaction sa_sigint;
@@ -87,12 +94,18 @@ int main(int argc, char ** argv) {
                 break;
             }
 
+            header_value *header_values = (header_value *)malloc(sizeof(header_value) * 10);
+            scan_request_header(header_values, buf);
             // If using malloc, somehow this cannot send response..
             char contents[1024 * 1000];
             char body[1024 * 500];
-            load_body(body, "test/test.html");
+            char full_path[BUFFERSIZE];
+
+            strcpy(full_path, root_directory);
+            strcat(full_path, header_values[1].value);
+            load_body(body, full_path);
             header(contents, strlen(body));
-            strcat(contents, "\n");
+            strcat(contents, "\r\n");
             strcat(contents, body);
 
             int send_message_size = send(accept_socket_fd, contents, sizeof(contents), 0);
@@ -100,6 +113,8 @@ int main(int argc, char ** argv) {
                 close(accept_socket_fd);
                 break;
             }
+            
+            free(header_values);
         }
     }
 

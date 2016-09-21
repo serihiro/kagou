@@ -23,21 +23,25 @@ void header(char *ret, int content_length){
     strcpy(ret, header_buffer);
 }
 
-int ROW_BUFFER = 4096;
+#define ROW_BUFFER 4096
 
 void load_body(char *ret, char *file_path) {
     struct stat st;
     int stat_result;
-    stat_result = stat(file_path, &st);
+    char resolved_path[PATH_MAX + 1];
+    realpath(file_path, resolved_path);
+
+    stat_result = stat(resolved_path, &st);
     if(stat_result != 0){
-        perror("Target file does not exist");
+        render_404(ret, file_path);
         return;
     }
 
     FILE *target_file;
-    target_file = fopen(file_path, "r");
+    target_file = fopen(resolved_path, "r");
     if (target_file == NULL) {
         perror("Failed to fopen target file");
+        render_500(ret);
         return;
      }
 
@@ -57,4 +61,51 @@ void load_body(char *ret, char *file_path) {
      fclose(target_file);
 
      strcpy(ret, fbuf);
+}
+
+void scan_request_header(header_value *header_values, char *message){
+    char *token;
+    char *attribute_delimter = " ";
+    char *row_delimter = "\n";
+
+    char cpy_message[strlen(message)];
+    strcpy(cpy_message, message);
+
+    token = strtok(cpy_message, attribute_delimter);
+    strcpy(header_values[0].key, "method");
+    strcpy(header_values[0].value, token);
+    token = strtok(NULL, attribute_delimter);
+    strcpy(header_values[1].key, "path");
+    strcpy(header_values[1].value, token);
+    token = strtok(NULL, attribute_delimter);
+    strcpy(header_values[2].key, "http_version");
+    strcpy(header_values[2].value, token);
+
+    token = strtok(message, row_delimter);
+    while(1) {
+        token = strtok(NULL, row_delimter);
+        if(!token)
+            break;
+
+        char cpy_row[strlen(token)];
+        token = strtok(cpy_row, attribute_delimter);
+    }
+}
+
+void render_404(char *ret, char *requested_path){
+    sprintf(ret, "<html><head> \
+                  <title>404 Not Found</title> \
+                  </head><body> \
+                  <h1>Not Found</h1> \
+                  <p>The requested URL %s</p> \
+                  </body></html>", requested_path);
+}
+
+void render_500(char *ret){
+    sprintf(ret, "<html><head> \
+                  <title>500 Server Internal Error</title> \
+                  </head><body> \
+                  <h1>erver Internal Error</h1> \
+                  <p>Sorry!</p> \
+                  </body></html>");
 }
