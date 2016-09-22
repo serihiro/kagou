@@ -110,3 +110,21 @@ void render_500(char *ret){
                   <p>Sorry!</p> \
                   </body></html>");
 }
+
+void ceate_response(char *request_message, char *response_message, char *root_directory){
+    header_value *header_values = (header_value *)malloc(sizeof(header_value) * 10);
+    scan_request_header(header_values, request_message);
+    // If using malloc, somehow this cannot send response..
+
+    char body[1024 * 500];
+    char full_path[BUFFERSIZE];
+
+    strcpy(full_path, root_directory);
+    strcat(full_path, header_values[1].value);
+    load_body(body, full_path);
+    header(response_message, strlen(body));
+    strcat(response_message, "\r\n");
+    strcat(response_message, body);
+
+    free(header_values);
+}

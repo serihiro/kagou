@@ -9,7 +9,6 @@
 #include <signal.h>
 #include "./request_handler.h"
 
-#define BUFFERSIZE  1024
 #define DEFAULT_ROOT_DIRECTORY "."
 
 int accept_socket_fd;
@@ -98,27 +97,14 @@ int main(int argc, char ** argv) {
                 break;
             }
 
-            header_value *header_values = (header_value *)malloc(sizeof(header_value) * 10);
-            scan_request_header(header_values, raw_message);
-            // If using malloc, somehow this cannot send response..
-            char contents[1024 * 1000];
-            char body[1024 * 500];
-            char full_path[BUFFERSIZE];
+            char response[1024 * 1000];
+            ceate_response(raw_message, response, root_directory);
 
-            strcpy(full_path, root_directory);
-            strcat(full_path, header_values[1].value);
-            load_body(body, full_path);
-            header(contents, strlen(body));
-            strcat(contents, "\r\n");
-            strcat(contents, body);
-
-            int send_message_size = send(accept_socket_fd, contents, sizeof(contents), 0);
+            int send_message_size = send(accept_socket_fd, response, sizeof(response), 0);
             if(send_message_size < 0) {
                 close(accept_socket_fd);
                 break;
             }
-
-            free(header_values);
         }
     }
 
