@@ -80,7 +80,7 @@ int main(int argc, char ** argv) {
 
     int accept_socket_fd;
     socklen_t len = sizeof(client_address);
-    char buf[BUFFERSIZE];
+    char raw_message[BUFFERSIZE];
 
     while(1){
         accept_socket_fd = accept(request_socket_fd, (struct sockaddr*)&client_address, &len);
@@ -91,15 +91,15 @@ int main(int argc, char ** argv) {
         }
 
         while(1) {
-            memset(&buf, 0, sizeof(buf));
-            int recv_message_size = recv(accept_socket_fd, buf, BUFFERSIZE, 0);
-            if (!recv_message_size || recv_message_size < 0) {
+            memset(&raw_message, 0, sizeof(raw_message));
+            int raw_message_size = recv(accept_socket_fd, raw_message, BUFFERSIZE, 0);
+            if (!raw_message_size || raw_message_size < 0) {
                 close(accept_socket_fd);
                 break;
             }
 
             header_value *header_values = (header_value *)malloc(sizeof(header_value) * 10);
-            scan_request_header(header_values, buf);
+            scan_request_header(header_values, raw_message);
             // If using malloc, somehow this cannot send response..
             char contents[1024 * 1000];
             char body[1024 * 500];
