@@ -15,7 +15,7 @@
 int accept_socket_fd;
 int request_socket_fd;
 
-void sigint_handler(int signum){
+void sigint_handler(){
     if(accept_socket_fd){
         close(accept_socket_fd);
     }
@@ -24,6 +24,18 @@ void sigint_handler(int signum){
         close(request_socket_fd);
     }
     exit(0);
+}
+
+void init_signal(){
+    struct sigaction sa_sigint;
+    memset(&sa_sigint, 0, sizeof(sa_sigint));
+    sa_sigint.sa_handler = sigint_handler;
+    sa_sigint.sa_flags = SA_RESTART;
+    if (sigaction(SIGINT, &sa_sigint, NULL) < 0) {
+        perror("Failed to bind sigaction\n");
+        exit(1);
+    }
+    signal(SIGPIPE, SIG_IGN);
 }
 
 int main(int argc, char ** argv) {
@@ -38,14 +50,7 @@ int main(int argc, char ** argv) {
         strcpy(root_directory, DEFAULT_ROOT_DIRECTORY);
     }
 
-    struct sigaction sa_sigint;
-    memset(&sa_sigint, 0, sizeof(sa_sigint));
-    sa_sigint.sa_handler = sigint_handler;
-    sa_sigint.sa_flags = SA_RESTART;
-    if (sigaction(SIGINT, &sa_sigint, NULL) < 0) {
-        perror("Failed to bind sigaction\n");
-        exit(1);
-    }
+    init_signal();
 
     request_socket_fd = socket(PF_INET, SOCK_STREAM, 0);
     if(request_socket_fd < 0) {
@@ -57,7 +62,6 @@ int main(int argc, char ** argv) {
     memset(&server_address, 0, sizeof(server_address));
     server_address.sin_family = PF_INET;
     server_address.sin_port   = htons(atoi(argv[1]));
-    signal(SIGPIPE, SIG_IGN);
 
     int bind_result = bind(request_socket_fd, (struct sockaddr *)&server_address, sizeof(struct sockaddr_in));
     if(bind_result < 0) {
