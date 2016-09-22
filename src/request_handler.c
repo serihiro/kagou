@@ -32,7 +32,8 @@ void load_body(char *ret, char *file_path) {
     realpath(file_path, resolved_path);
 
     stat_result = stat(resolved_path, &st);
-    if(stat_result != 0){
+    // file exists and regular file
+    if (stat_result != 0 || (st.st_mode & S_IFMT) != S_IFREG){
         render_404(ret, file_path);
         return;
     }
