@@ -1,51 +1,24 @@
 #include "./request_handler.h"
 #define HEADER_DATE_FORMAT "%a, %d %b %Y %H:%M:%S GMT"
-
-void header(char *ret, int content_length){
-    struct tm *t_st;
-    time_t tt;
-
-    time(&tt);
-    t_st = localtime(&tt);
-    char systime[128];
-    formated_system_datetime(systime, HEADER_DATE_FORMAT);
-
-    char header_buffer[1024] = "HTTP/1.1 200 OK\nDate: ";
-    strcat(header_buffer, systime);
-    strcat(header_buffer, "\n");
-    strcat(header_buffer, "Server: kagou\n");
-    strcat(header_buffer, "Connection: close\n");
-    strcat(header_buffer, "Content-type: text/html\n");
-    char content_length_content[16 + (int)ceil(log10(content_length))];
-    sprintf(content_length_content, "Content-length: %d\n", content_length);
-    strcat(header_buffer, content_length_content);
-
-    strcpy(ret, header_buffer);
-}
-
+#define HEADER_SEPARATOR ": "
+#define HEADER_LINE_BREAK_CODE "\r\n"
 #define ROW_BUFFER 4096
 
-void load_body(char *ret, char *file_path) {
-    struct stat st;
-    int stat_result;
-    char resolved_path[PATH_MAX + 1];
-    realpath(file_path, resolved_path);
-
-    stat_result = stat(resolved_path, &st);
-    // file exists and regular file
-    if (stat_result != 0 || (st.st_mode & S_IFMT) != S_IFREG){
-        render_404(ret, file_path);
-        return;
+void cleanup(header_value *request_header_values,
+            header_value *response_header_values,
+            FILE *target_file){
+    if(request_header_values != NULL){
+        free(request_header_values);
     }
+    if(response_header_values != NULL){
+        free(response_header_values);
+    }
+    if(target_file != NULL){
+        fclose(target_file);
+    }
+}
 
-    FILE *target_file;
-    target_file = fopen(resolved_path, "r");
-    if (target_file == NULL) {
-        perror("Failed to fopen target file");
-        render_500(ret);
-        return;
-     }
-
+void load_text_file(char *ret, FILE *target_file) {
      fpos_t fsize = 0;
      fseek(target_file, 0, SEEK_END);
      fgetpos(target_file, &fsize);
@@ -59,28 +32,28 @@ void load_body(char *ret, char *file_path) {
      while(fgets(rbuf, fsize, target_file) != NULL){
          strcat(fbuf, rbuf);
      }
-     fclose(target_file);
 
      strcpy(ret, fbuf);
 }
 
-void scan_request_header(header_value *header_values, char *message){
+void scan_request_header(char *message, header_value *request_header_values){
     char *token;
     char *attribute_delimter = " ";
     char *row_delimter = "\n";
 
     char cpy_message[strlen(message)];
+    memset(&cpy_message, 0, sizeof(cpy_message));
     strcpy(cpy_message, message);
 
     token = strtok(cpy_message, attribute_delimter);
-    strcpy(header_values[0].key, "method");
-    strcpy(header_values[0].value, token);
+    request_header_values[0].key = "method";
+    request_header_values[0].value = token;
     token = strtok(NULL, attribute_delimter);
-    strcpy(header_values[1].key, "path");
-    strcpy(header_values[1].value, token);
+    request_header_values[1].key = "path";
+    request_header_values[1].value = token;
     token = strtok(NULL, attribute_delimter);
-    strcpy(header_values[2].key, "http_version");
-    strcpy(header_values[2].value, token);
+    request_header_values[2].key = "http_version";
+    request_header_values[2].value = token;
 
     token = strtok(message, row_delimter);
     while(1) {
@@ -93,13 +66,21 @@ void scan_request_header(header_value *header_values, char *message){
     }
 }
 
-void render_404(char *ret, char *requested_path){
+void render_415(char *ret){
+    sprintf(ret, "<html><head> \
+                  <title>415 Unsupported Media Type</title> \
+                  </head><body> \
+                  <h1>415 Unsupported Media Type</h1> \
+                  </body></html>");
+}
+
+void render_404(char *ret){
     sprintf(ret, "<html><head> \
                   <title>404 Not Found</title> \
                   </head><body> \
                   <h1>Not Found</h1> \
-                  <p>The requested URL %s</p> \
-                  </body></html>", requested_path);
+                  <p>The requested URL is Not Found</p> \
+                  </body></html>");
 }
 
 void render_500(char *ret){
@@ -109,4 +90,133 @@ void render_500(char *ret){
                   <h1>erver Internal Error</h1> \
                   <p>Sorry!</p> \
                   </body></html>");
+}
+
+void create_html_message(char *ret, http_response response) {
+    strcat(ret, response.response_status);
+    strcat(ret, HEADER_LINE_BREAK_CODE);
+
+    for(int i = 0; i < (int)sizeof(response.header_values); i++){
+        if(response.header_values[i].key == NULL)
+            break;
+        strcat(ret, response.header_values[i].key);
+        strcat(ret, HEADER_SEPARATOR);
+        strcat(ret, response.header_values[i].value);
+        strcat(ret, HEADER_LINE_BREAK_CODE);
+    }
+    strcat(ret, HEADER_LINE_BREAK_CODE);
+    strcat(ret, response.body);
+}
+
+void create_response(char *request_message, char *response_message, char *root_directory){
+    header_value *request_header_values = NULL;
+    header_value *response_header_values = NULL;
+    FILE *target_file = NULL;
+
+    request_header_values = (header_value *)malloc(sizeof(header_value) * 10);
+    response_header_values = (header_value *)malloc(sizeof(header_value) * 10);
+    memset(request_header_values, 0, sizeof(*request_header_values));
+    memset(response_header_values, 0, sizeof(*response_header_values));
+
+    scan_request_header(request_message, request_header_values);
+    char full_path[PATH_MAX + 1];
+    strcpy(full_path, root_directory);
+    char tmp_path[BUFFERSIZE];
+    strcpy(tmp_path, request_header_values[1].value);
+    strcat(full_path, tmp_path);
+
+    char resolved_path[PATH_MAX + 1];
+    realpath(full_path, resolved_path);
+
+    char body[1024 * 500];
+    char html_message[1024 * 1000];
+    memset(&body, 0, sizeof(body));
+    memset(&html_message, 0, sizeof(html_message));
+
+    http_response response;
+    memset(&response, 0, sizeof(response));
+
+    char systime[128];
+    formated_system_datetime(systime, HEADER_DATE_FORMAT);
+
+    response_header_values[0].key = "Date";
+    response_header_values[0].value = systime;
+    response_header_values[1].key = "Server";
+    response_header_values[1].value = SERVER_NAME;
+    response_header_values[2].key = "Connection";
+    response_header_values[2].value = "close"; // FIXME toriisogi
+
+    struct stat st;
+    int stat_result;
+    stat_result = stat(resolved_path, &st);
+    // file exists and regular file
+    if (stat_result != 0 || (st.st_mode & S_IFMT) != S_IFREG){
+        render_404(body);
+        response_header_values[3].key =  "Content-type";
+        response_header_values[3].value = "text/html";
+        response_header_values[4].key = "Content-length";
+        char length[100];
+        sprintf(length, "%ld", strlen(body));
+        response_header_values[4].value = length;
+
+        response.response_status =  "HTTP/1.1 404 Not Found";
+        response.header_values = response_header_values;
+        response.body = body;
+        create_html_message(response_message, response);
+        cleanup(request_header_values, response_header_values, target_file);
+        return;
+    }
+
+    target_file = fopen(resolved_path, "r");
+    if (target_file == NULL) {
+        perror("Failed to fopen target file");
+        render_500(body);
+        response_header_values[3].key = "Content-type";
+        response_header_values[3].value = "text/html";
+        response_header_values[4].key = "Content-length";
+        char length[100];
+        sprintf(length, "%ld", strlen(body));
+        response_header_values[4].value = length;
+
+        response.response_status =  "HTTP/1.1 500 Internal Server Error";
+        response.header_values = response_header_values;
+        response.body = body;
+        create_html_message(response_message, response);
+        cleanup(request_header_values, response_header_values, target_file);
+        return;
+     }
+
+    char file_name[PATH_MAX + 1];
+    char copied_resolved_path[PATH_MAX + 1];
+    strcpy(copied_resolved_path, resolved_path);
+    last_strtok(file_name, copied_resolved_path, "/");
+
+    // TODO functionize
+    if(strstr(file_name, ".html") != NULL || strstr(file_name, ".htm") != NULL){
+        load_text_file(body, target_file);
+        response_header_values[3].key = "Content-type";
+        response_header_values[3].value = "text/html";
+        response_header_values[4].key = "Content-length";
+        char length[100];
+        sprintf(length, "%ld", strlen(body));
+        response_header_values[4].value = length;
+
+        response.response_status =  "HTTP/1.1 200 OK";
+        response.header_values = response_header_values;
+        response.body = body;
+    } else {
+        render_415(body);
+        response_header_values[3].key = "Content-type";
+        response_header_values[3].value = "text/html";
+        response_header_values[4].key = "Content-length";
+        char length[100];
+        sprintf(length, "%ld", strlen(body));
+        response_header_values[4].value = length;
+
+        response.response_status =  "HTTP/1.1 415 Unsupported Media Type";
+        response.header_values = response_header_values;
+        response.body = body;
+    }
+    create_html_message(response_message, response);
+    cleanup(request_header_values, response_header_values, target_file);
 }

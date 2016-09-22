@@ -18,3 +18,23 @@ void formated_system_datetime(char *ret, char *format) {
     strftime(buf, sizeof(buf), format, t_st);
     strcpy(ret, buf);
 }
+
+void last_strtok(char *ret, char *target, char *pattern) {
+    if (strstr(target, pattern) == NULL){
+        strcpy(ret, NULL);
+        return;
+    }
+
+    char *last_tokenized;
+    char *tokenized = strtok(target, pattern);
+    while(1){
+        tokenized = strtok(NULL, pattern);
+        if(tokenized == NULL){
+            break;
+        }else{
+            last_tokenized = tokenized;
+        }
+    }
+    
+    strcpy(ret, last_tokenized);
+}
