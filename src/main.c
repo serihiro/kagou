@@ -113,7 +113,7 @@ int main(int argc, char ** argv) {
                 close(accept_socket_fd);
                 break;
             }
-            
+
             free(header_values);
         }
     }

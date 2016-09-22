@@ -1,6 +1,6 @@
 #include "./util.h"
 
-static struct tm *local_time() {
+struct tm *local_time() {
     struct tm *t_st;
     time_t tt;
 
