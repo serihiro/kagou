@@ -80,6 +80,7 @@ int main(int argc, char ** argv) {
     int accept_socket_fd;
     socklen_t len = sizeof(client_address);
     char raw_message[BUFFERSIZE];
+    char response[1024 * 1000];
 
     while(1){
         accept_socket_fd = accept(request_socket_fd, (struct sockaddr*)&client_address, &len);
@@ -90,6 +91,7 @@ int main(int argc, char ** argv) {
         }
 
         while(1) {
+            memset(&response, 0, sizeof(response));
             memset(&raw_message, 0, sizeof(raw_message));
             int raw_message_size = recv(accept_socket_fd, raw_message, BUFFERSIZE, 0);
             if (!raw_message_size || raw_message_size < 0) {
@@ -97,8 +99,7 @@ int main(int argc, char ** argv) {
                 break;
             }
 
-            char response[1024 * 1000];
-            ceate_response(raw_message, response, root_directory);
+            create_response(raw_message, response, root_directory);
 
             int send_message_size = send(accept_socket_fd, response, sizeof(response), 0);
             if(send_message_size < 0) {
