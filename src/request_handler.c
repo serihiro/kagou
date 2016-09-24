@@ -3,6 +3,7 @@
 #define HEADER_SEPARATOR ": "
 #define HEADER_LINE_BREAK_CODE "\r\n"
 #define ROW_BUFFER 4096
+#define HEADER_VALUE_SIZE 10
 
 void cleanup(header_value *request_header_values,
             header_value *response_header_values,
@@ -113,10 +114,16 @@ void create_response(char *request_message, char *response_message, char *root_d
     header_value *response_header_values = NULL;
     FILE *target_file = NULL;
 
-    request_header_values = (header_value *)malloc(sizeof(header_value) * 10);
-    response_header_values = (header_value *)malloc(sizeof(header_value) * 10);
+    request_header_values = (header_value *)malloc(sizeof(header_value) * HEADER_VALUE_SIZE);
+    response_header_values = (header_value *)malloc(sizeof(header_value) * HEADER_VALUE_SIZE);
     memset(request_header_values, 0, sizeof(*request_header_values));
     memset(response_header_values, 0, sizeof(*response_header_values));
+    for(int i = 0; i < HEADER_VALUE_SIZE; i++){
+        request_header_values[i].key = NULL;
+        request_header_values[i].value = NULL;
+        response_header_values[i].key = NULL;
+        response_header_values[i].value = NULL;
+    }
 
     scan_request_header(request_message, request_header_values);
     char full_path[PATH_MAX + 1];
