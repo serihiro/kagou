@@ -199,10 +199,22 @@ void create_response(char *request_message, char *response_message, char *root_d
     last_strtok(file_name, copied_resolved_path, "/");
 
     // TODO functionize
-    if(strstr(file_name, ".html") != NULL || strstr(file_name, ".htm") != NULL){
+    if(strstr(file_name, ".html") != NULL || strstr(file_name, ".htm") != NULL) {
         load_text_file(body, target_file);
         response_header_values[3].key = "Content-type";
         response_header_values[3].value = "text/html";
+        response_header_values[4].key = "Content-length";
+        char length[100];
+        sprintf(length, "%ld", strlen(body));
+        response_header_values[4].value = length;
+
+        response.response_status =  "HTTP/1.1 200 OK";
+        response.header_values = response_header_values;
+        response.body = body;
+    } else if(strstr(file_name, ".js") != NULL) {
+        load_text_file(body, target_file);
+        response_header_values[3].key = "Content-type";
+        response_header_values[3].value = "text/javascript";
         response_header_values[4].key = "Content-length";
         char length[100];
         sprintf(length, "%ld", strlen(body));
