@@ -254,7 +254,7 @@ void create_response(char *request_message, char *response_message, char *root_d
 
     // TODO functionize
     if(strstr(file_name, ".html") != NULL || strstr(file_name, ".htm") != NULL ||
-       strstr(file_name, ".js") != NULL) {
+       strstr(file_name, ".js") != NULL ||  strstr(file_name, ".css") != NULL) {
         generate_text_response(body, file_name, target_file, response_header_values, &response);
     } else {
         render_415(body);
