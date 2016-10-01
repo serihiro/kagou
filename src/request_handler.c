@@ -5,8 +5,8 @@
 #define ROW_BUFFER 4096
 #define HEADER_VALUE_SIZE 10
 
-void cleanup(header_value *request_header_values,
-            header_value *response_header_values,
+void cleanup(KEY_VALUE *request_header_values,
+            KEY_VALUE *response_header_values,
             FILE *target_file){
     if(request_header_values != NULL){
         free(request_header_values);
@@ -37,7 +37,7 @@ void load_text_file(char *ret, FILE *target_file) {
      strcpy(ret, fbuf);
 }
 
-void scan_request_header(char *message, header_value *request_header_values){
+void scan_request_header(char *message, KEY_VALUE *request_header_values){
     char *token;
     char *attribute_delimter = " ";
     char *row_delimter = "\n";
@@ -142,12 +142,12 @@ char* content_type_from_filename(char* filename){
 }
 
 void create_response(char *request_message, char *response_message, char *root_directory){
-    header_value *request_header_values = NULL;
-    header_value *response_header_values = NULL;
+    KEY_VALUE *request_header_values = NULL;
+    KEY_VALUE *response_header_values = NULL;
     FILE *target_file = NULL;
 
-    request_header_values = (header_value *)malloc(sizeof(header_value) * HEADER_VALUE_SIZE);
-    response_header_values = (header_value *)malloc(sizeof(header_value) * HEADER_VALUE_SIZE);
+    request_header_values = (KEY_VALUE *)malloc(sizeof(KEY_VALUE) * HEADER_VALUE_SIZE);
+    response_header_values = (KEY_VALUE *)malloc(sizeof(KEY_VALUE) * HEADER_VALUE_SIZE);
     memset(request_header_values, 0, sizeof(*request_header_values));
     memset(response_header_values, 0, sizeof(*response_header_values));
     for(int i = 0; i < HEADER_VALUE_SIZE; i++){

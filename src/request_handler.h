@@ -14,11 +14,11 @@
 typedef struct  {
     char *key;
     char *value;
-} header_value;
+} KEY_VALUE;
 
 typedef struct {
     char * response_status;
-    header_value *header_values;
+    KEY_VALUE *header_values;
     char *body;
 } http_response;
 
@@ -29,7 +29,7 @@ typedef struct {
 } mime_map;
 
 void load_text_file(char *ret, FILE *target_file);
-void scan_request_header(char *message, header_value *request_header_values);
+void scan_request_header(char *message, KEY_VALUE *request_header_values);
 void render_404(char *ret);
 void render_415(char *ret);
 void render_500(char *ret);
