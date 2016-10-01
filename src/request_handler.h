@@ -36,3 +36,8 @@ void render_500(char *ret);
 void create_html_message(char *ret, http_response response);
 void create_response(char *request_message, char *response_message, char *root_directory);
 char* content_type_from_filename(char* filename);
+void generate_text_response(char *body,
+                       char *file_name,
+                       FILE *target_file,
+                       KEY_VALUE *response_header_values,
+                       http_response *response);

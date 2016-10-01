@@ -9,6 +9,7 @@ void cleanup(KEY_VALUE *request_header_values,
             KEY_VALUE *response_header_values,
             FILE *target_file){
     if(request_header_values != NULL){
+        free(request_header_values[4].value);
         free(request_header_values);
     }
     if(response_header_values != NULL){
@@ -141,6 +142,27 @@ char* content_type_from_filename(char* filename){
     return "text/plain";
 }
 
+void generate_text_response(char *body,
+                            char *file_name,
+                            FILE *target_file,
+                            KEY_VALUE *response_header_values,
+                            http_response *response){
+    load_text_file(body, target_file);
+    response_header_values[3].key = "Content-type";
+    response_header_values[3].value = content_type_from_filename(file_name);
+    response_header_values[4].key = "Content-length";
+    // Previously declared `length` as char array(statically).
+    // But sometimes the value of `length`was overwritten in `create_html_message`.
+    // The allocated memory here will be freed in `cleanup`.
+    char *length = (char *)malloc(10);
+    sprintf(length, "%ld", strlen(body));
+    response_header_values[4].value = length;
+
+    response->response_status = "HTTP/1.1 200 OK";
+    response->header_values = response_header_values;
+    response->body = body;
+}
+
 void create_response(char *request_message, char *response_message, char *root_directory){
     KEY_VALUE *request_header_values = NULL;
     KEY_VALUE *response_header_values = NULL;
@@ -169,10 +191,10 @@ void create_response(char *request_message, char *response_message, char *root_d
 
     char body[1024 * 500];
     char html_message[1024 * 1000];
-    memset(&body, 0, sizeof(body));
-    memset(&html_message, 0, sizeof(html_message));
+    memset(body, 0, sizeof(body));
+    memset(html_message, 0, sizeof(html_message));
 
-    http_response response;
+    http_response response = { body, response_header_values, html_message };
     memset(&response, 0, sizeof(response));
 
     char systime[128];
@@ -198,7 +220,7 @@ void create_response(char *request_message, char *response_message, char *root_d
         sprintf(length, "%ld", strlen(body));
         response_header_values[4].value = length;
 
-        response.response_status =  "HTTP/1.1 404 Not Found";
+        response.response_status = "HTTP/1.1 404 Not Found";
         response.header_values = response_header_values;
         response.body = body;
         create_html_message(response_message, response);
@@ -217,7 +239,7 @@ void create_response(char *request_message, char *response_message, char *root_d
         sprintf(length, "%ld", strlen(body));
         response_header_values[4].value = length;
 
-        response.response_status =  "HTTP/1.1 500 Internal Server Error";
+        response.response_status = "HTTP/1.1 500 Internal Server Error";
         response.header_values = response_header_values;
         response.body = body;
         create_html_message(response_message, response);
@@ -231,30 +253,9 @@ void create_response(char *request_message, char *response_message, char *root_d
     last_strtok(file_name, copied_resolved_path, "/");
 
     // TODO functionize
-    if(strstr(file_name, ".html") != NULL || strstr(file_name, ".htm") != NULL) {
-        load_text_file(body, target_file);
-        response_header_values[3].key = "Content-type";
-        response_header_values[3].value = content_type_from_filename(file_name);
-        response_header_values[4].key = "Content-length";
-        char length[100];
-        sprintf(length, "%ld", strlen(body));
-        response_header_values[4].value = length;
-
-        response.response_status =  "HTTP/1.1 200 OK";
-        response.header_values = response_header_values;
-        response.body = body;
-    } else if(strstr(file_name, ".js") != NULL) {
-        load_text_file(body, target_file);
-        response_header_values[3].key = "Content-type";
-        response_header_values[3].value = content_type_from_filename(file_name);
-        response_header_values[4].key = "Content-length";
-        char length[100];
-        sprintf(length, "%ld", strlen(body));
-        response_header_values[4].value = length;
-
-        response.response_status =  "HTTP/1.1 200 OK";
-        response.header_values = response_header_values;
-        response.body = body;
+    if(strstr(file_name, ".html") != NULL || strstr(file_name, ".htm") != NULL ||
+       strstr(file_name, ".js") != NULL) {
+        generate_text_response(body, file_name, target_file, response_header_values, &response);
     } else {
         render_415(body);
         response_header_values[3].key = "Content-type";
