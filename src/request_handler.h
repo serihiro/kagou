@@ -17,7 +17,7 @@ typedef struct  {
 } KEY_VALUE;
 
 typedef struct {
-    char * response_status;
+    char *response_status;
     KEY_VALUE *header_values;
     char *body;
 } http_response;
