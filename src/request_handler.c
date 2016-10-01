@@ -109,6 +109,38 @@ void create_html_message(char *ret, http_response response) {
     strcat(ret, response.body);
 }
 
+const mime_map MIME_TYPES[] = {
+    {".htm", "text/html", FILE_ASCII},
+    {".html", "text/html", FILE_ASCII},
+    {".css", "text/css", FILE_ASCII},
+    {".js", "application/javascript", FILE_ASCII},
+    {".gif", "image/gif", FILE_BINARY},
+    {".jpeg", "image/jpeg", FILE_BINARY},
+    {".jpg", "image/jpeg", FILE_BINARY},
+    {".ico", "image/x-icon", FILE_BINARY},
+    {".pdf", "application/pdf", FILE_BINARY},
+    {".mp4", "video/mp4", FILE_BINARY},
+    {".png", "image/png", FILE_BINARY},
+    {".svg", "image/svg+xml", FILE_BINARY},
+    {".xml", "text/xml", FILE_BINARY},
+    {NULL, NULL, FILE_ASCII},
+};
+
+char* content_type_from_filename(char* filename){
+    char *dot = strrchr(filename, '.');
+    mime_map *map = (mime_map *)MIME_TYPES;
+    if(dot){
+        while(map->extension){
+            if(strcmp(map->extension, dot) == 0){
+                return (char *)map->mime_type;
+            }
+            map++;
+        }
+    }
+
+    return "text/plain";
+}
+
 void create_response(char *request_message, char *response_message, char *root_directory){
     header_value *request_header_values = NULL;
     header_value *response_header_values = NULL;
@@ -202,7 +234,7 @@ void create_response(char *request_message, char *response_message, char *root_d
     if(strstr(file_name, ".html") != NULL || strstr(file_name, ".htm") != NULL) {
         load_text_file(body, target_file);
         response_header_values[3].key = "Content-type";
-        response_header_values[3].value = "text/html";
+        response_header_values[3].value = content_type_from_filename(file_name);
         response_header_values[4].key = "Content-length";
         char length[100];
         sprintf(length, "%ld", strlen(body));
@@ -214,7 +246,7 @@ void create_response(char *request_message, char *response_message, char *root_d
     } else if(strstr(file_name, ".js") != NULL) {
         load_text_file(body, target_file);
         response_header_values[3].key = "Content-type";
-        response_header_values[3].value = "text/javascript";
+        response_header_values[3].value = content_type_from_filename(file_name);
         response_header_values[4].key = "Content-length";
         char length[100];
         sprintf(length, "%ld", strlen(body));
