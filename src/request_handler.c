@@ -115,6 +115,7 @@ const mime_map MIME_TYPES[] = {
     {".html", "text/html", FILE_ASCII},
     {".css", "text/css", FILE_ASCII},
     {".js", "application/javascript", FILE_ASCII},
+    {".csv", "text/csv", FILE_ASCII},
     {".gif", "image/gif", FILE_BINARY},
     {".jpeg", "image/jpeg", FILE_BINARY},
     {".jpg", "image/jpeg", FILE_BINARY},
@@ -254,7 +255,8 @@ void create_response(char *request_message, char *response_message, char *root_d
 
     // TODO functionize
     if(strstr(file_name, ".html") != NULL || strstr(file_name, ".htm") != NULL ||
-       strstr(file_name, ".js") != NULL ||  strstr(file_name, ".css") != NULL) {
+       strstr(file_name, ".js") != NULL   || strstr(file_name, ".css") != NULL ||
+       strstr(file_name, ".csv") != NULL) {
         generate_text_response(body, file_name, target_file, response_header_values, &response);
     } else {
         render_415(body);
