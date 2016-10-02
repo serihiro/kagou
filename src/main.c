@@ -77,12 +77,11 @@ int main(int argc, char ** argv) {
     struct sockaddr_in client_address;
     memset(&client_address, 0, sizeof(client_address));
 
-    int accept_socket_fd;
     socklen_t len = sizeof(client_address);
     char raw_message[BUFFERSIZE];
 
     while(1){
-        accept_socket_fd = accept(request_socket_fd, (struct sockaddr*)&client_address, &len);
+        int accept_socket_fd = accept(request_socket_fd, (struct sockaddr*)&client_address, &len);
         if (accept_socket_fd < 0){
             close(request_socket_fd);
             perror("Failed to accept\n");
