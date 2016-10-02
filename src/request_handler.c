@@ -1,4 +1,6 @@
 #include "./request_handler.h"
+#include <sys/socket.h>
+#include <unistd.h>
 #define HEADER_DATE_FORMAT "%a, %d %b %Y %H:%M:%S GMT"
 #define HEADER_SEPARATOR ": "
 #define HEADER_LINE_BREAK_CODE "\r\n"
@@ -94,7 +96,7 @@ void render_500(char *ret){
                   </body></html>");
 }
 
-void create_html_message(char *ret, http_response response) {
+void create_response_header(char *ret, http_response response) {
     strcat(ret, response.response_status);
     strcat(ret, HEADER_LINE_BREAK_CODE);
 
@@ -106,8 +108,7 @@ void create_html_message(char *ret, http_response response) {
         strcat(ret, response.header_values[i].value);
         strcat(ret, HEADER_LINE_BREAK_CODE);
     }
-    strcat(ret, HEADER_LINE_BREAK_CODE);
-    strcat(ret, response.body);
+    strcat(ret, HEADER_LINE_BREAK_CODE); // separator of header and body
 }
 
 const mime_map MIME_TYPES[] = {
@@ -165,12 +166,12 @@ void generate_text_response(char *body,
     response->body = body;
 }
 
-char* create_response(char *request_message, char *root_directory){
+int respond(char *request_message, char *root_directory, int response_target_fd){
     KEY_VALUE *request_header_values = NULL;
     KEY_VALUE *response_header_values = NULL;
     FILE *target_file = NULL;
-    char *response_message = (char *)malloc(BUFFERSIZE);
-    memset(response_message, 0, sizeof(*response_message));
+    char *response_header = (char *)malloc(BUFFERSIZE);
+    memset(response_header, 0, sizeof(*response_header));
 
     request_header_values = (KEY_VALUE *)malloc(sizeof(KEY_VALUE) * HEADER_VALUE_SIZE);
     response_header_values = (KEY_VALUE *)malloc(sizeof(KEY_VALUE) * HEADER_VALUE_SIZE);
@@ -227,10 +228,24 @@ char* create_response(char *request_message, char *root_directory){
         response.response_status = "HTTP/1.1 404 Not Found";
         response.header_values = response_header_values;
         response.body = body;
-        create_html_message(response_message, response);
+        create_response_header(response_header, response);
+        int send_message_size = send(response_target_fd, response_header, strlen(response_header), 0);
+        if(send_message_size < 0) {
+            return -1;
+        }
+        send_message_size = send(response_target_fd, response.body, strlen(response.body), 0);
+        if(send_message_size < 0) {
+            return -1;
+        }
+
+        // To send FIN
+        int close_result = close(response_target_fd);
+        if(close_result < 0) {
+            return -1;
+        }
+
         cleanup(request_header_values, response_header_values, target_file);
-        char *return_response_message = (char *)realloc(response_message, strlen(response_message));
-        return return_response_message;
+        return 0;
     }
 
     target_file = fopen(resolved_path, "r");
@@ -247,10 +262,24 @@ char* create_response(char *request_message, char *root_directory){
         response.response_status = "HTTP/1.1 500 Internal Server Error";
         response.header_values = response_header_values;
         response.body = body;
-        create_html_message(response_message, response);
+        create_response_header(response_header, response);
+        int send_message_size = send(response_target_fd, response_header, strlen(response_header), 0);
+        if(send_message_size < 0) {
+            return -1;
+        }
+        send_message_size = send(response_target_fd, response.body, strlen(response.body), 0);
+        if(send_message_size < 0) {
+            return -1;
+        }
+
+        // To send FIN
+        int close_result = close(response_target_fd);
+        if(close_result < 0) {
+            return -1;
+        }
+
         cleanup(request_header_values, response_header_values, target_file);
-        char *return_response_message = (char *)realloc(response_message, strlen(response_message));
-        return return_response_message;
+        return 0;
      }
 
     char file_name[PATH_MAX + 1];
@@ -276,8 +305,23 @@ char* create_response(char *request_message, char *root_directory){
         response.header_values = response_header_values;
         response.body = body;
     }
-    create_html_message(response_message, response);
+
+    create_response_header(response_header, response);
+    int send_message_size = send(response_target_fd, response_header, strlen(response_header), 0);
+    if(send_message_size < 0) {
+        return -1;
+    }
+    send_message_size = send(response_target_fd, response.body, strlen(response.body), 0);
+    if(send_message_size < 0) {
+        return -1;
+    }
+
+    // To send FIN
+    int close_result = close(response_target_fd);
+    if(close_result < 0) {
+        return -1;
+    }
+
     cleanup(request_header_values, response_header_values, target_file);
-    char *return_response_message = (char *)realloc(response_message, strlen(response_message));
-    return return_response_message; //will be freed in main.c
+    return 0;
 }

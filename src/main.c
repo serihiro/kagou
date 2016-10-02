@@ -96,13 +96,8 @@ int main(int argc, char ** argv) {
                 close(accept_socket_fd);
                 break;
             }
-            char *response = create_response(raw_message, root_directory);
-            int send_message_size = send(accept_socket_fd, response, strlen(response), 0);
-            if(send_message_size < 0) {
-                close(accept_socket_fd);
-                break;
-            }
-            free(response);
+
+            respond(raw_message, root_directory, accept_socket_fd);
         }
     }
 
