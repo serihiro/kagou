@@ -165,10 +165,12 @@ void generate_text_response(char *body,
     response->body = body;
 }
 
-void create_response(char *request_message, char *response_message, char *root_directory){
+char* create_response(char *request_message, char *root_directory){
     KEY_VALUE *request_header_values = NULL;
     KEY_VALUE *response_header_values = NULL;
     FILE *target_file = NULL;
+    char *response_message = (char *)malloc(BUFFERSIZE);
+    memset(response_message, 0, sizeof(*response_message));
 
     request_header_values = (KEY_VALUE *)malloc(sizeof(KEY_VALUE) * HEADER_VALUE_SIZE);
     response_header_values = (KEY_VALUE *)malloc(sizeof(KEY_VALUE) * HEADER_VALUE_SIZE);
@@ -227,7 +229,8 @@ void create_response(char *request_message, char *response_message, char *root_d
         response.body = body;
         create_html_message(response_message, response);
         cleanup(request_header_values, response_header_values, target_file);
-        return;
+        char *return_response_message = (char *)realloc(response_message, strlen(response_message));
+        return return_response_message;
     }
 
     target_file = fopen(resolved_path, "r");
@@ -246,7 +249,8 @@ void create_response(char *request_message, char *response_message, char *root_d
         response.body = body;
         create_html_message(response_message, response);
         cleanup(request_header_values, response_header_values, target_file);
-        return;
+        char *return_response_message = (char *)realloc(response_message, strlen(response_message));
+        return return_response_message;
      }
 
     char file_name[PATH_MAX + 1];
@@ -274,4 +278,6 @@ void create_response(char *request_message, char *response_message, char *root_d
     }
     create_html_message(response_message, response);
     cleanup(request_header_values, response_header_values, target_file);
+    char *return_response_message = (char *)realloc(response_message, strlen(response_message));
+    return return_response_message; //will be freed in main.c
 }

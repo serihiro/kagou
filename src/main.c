@@ -90,25 +90,19 @@ int main(int argc, char ** argv) {
         }
 
         while(1) {
-            char *response = (char *)malloc(1024 * 1000);
-            memset(response, 0, sizeof(*response));
             memset(&raw_message, 0, sizeof(raw_message));
             int raw_message_size = recv(accept_socket_fd, raw_message, BUFFERSIZE, 0);
             if (!raw_message_size || raw_message_size < 0) {
                 close(accept_socket_fd);
                 break;
             }
-
-            create_response(raw_message, response, root_directory);
-            int response_length = (int)strlen(response);
-            char *shrinked_response = realloc(response, (response_length * 4) + 1);
-
-            int send_message_size = send(accept_socket_fd, shrinked_response, response_length, 0);
-            free(shrinked_response);
+            char *response = create_response(raw_message, root_directory);
+            int send_message_size = send(accept_socket_fd, response, strlen(response), 0);
             if(send_message_size < 0) {
                 close(accept_socket_fd);
                 break;
             }
+            free(response);
         }
     }
 
