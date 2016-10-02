@@ -16,9 +16,9 @@ $ ./kagou 5000 html
 ### Support media
 - [x] html
 - [x] js
-- [ ] css
-- [ ] csv
-- [ ] json
+- [x] css
+- [x] csv
+- [x] json
 - [ ] jpg
 - [ ] png
 - [ ] gif
