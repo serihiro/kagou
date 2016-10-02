@@ -34,7 +34,7 @@ void render_404(char *ret);
 void render_415(char *ret);
 void render_500(char *ret);
 void create_html_message(char *ret, http_response response);
-int respond(char *request_message, char *root_directory, int response_target_fd);
+extern int respond(char *request_message, char *root_directory, int response_target_fd);
 char* content_type_from_filename(char* filename);
 void generate_text_response(char *body,
                        char *file_name,

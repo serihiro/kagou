@@ -166,7 +166,7 @@ void generate_text_response(char *body,
     response->body = body;
 }
 
-int respond(char *request_message, char *root_directory, int response_target_fd){
+extern int respond(char *request_message, char *root_directory, int response_target_fd){
     KEY_VALUE *request_header_values = NULL;
     KEY_VALUE *response_header_values = NULL;
     FILE *target_file = NULL;
