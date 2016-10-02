@@ -116,6 +116,7 @@ const mime_map MIME_TYPES[] = {
     {".css", "text/css", FILE_ASCII},
     {".js", "application/javascript", FILE_ASCII},
     {".csv", "text/csv", FILE_ASCII},
+    {".json", "application/json", FILE_ASCII},
     {".gif", "image/gif", FILE_BINARY},
     {".jpeg", "image/jpeg", FILE_BINARY},
     {".jpg", "image/jpeg", FILE_BINARY},
