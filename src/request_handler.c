@@ -1,18 +1,18 @@
-#include "./request_handler.h"
+#include "request_handler.h"
+#include "request.h"
 #include <sys/socket.h>
 #include <unistd.h>
 #define HEADER_DATE_FORMAT "%a, %d %b %Y %H:%M:%S GMT"
 #define HEADER_SEPARATOR ": "
 #define HEADER_LINE_BREAK_CODE "\r\n"
 #define ROW_BUFFER 4096
-#define HEADER_VALUE_SIZE 10
+#define HEADER_VALUE_SIZE 10 // temporary define
 
-void cleanup(KEY_VALUE *request_header_values,
+void cleanup(Request *request,
             KEY_VALUE *response_header_values,
             FILE *target_file){
-    if(request_header_values != NULL){
-        free(request_header_values[4].value);
-        free(request_header_values);
+    if(request != NULL){
+        Request_delete(request);
     }
     if(response_header_values != NULL){
         free(response_header_values);
@@ -38,36 +38,6 @@ void load_text_file(char *ret, FILE *target_file) {
      }
 
      strcpy(ret, fbuf);
-}
-
-void scan_request_header(char *message, KEY_VALUE *request_header_values){
-    char *token;
-    char *attribute_delimter = " ";
-    char *row_delimter = "\n";
-
-    char cpy_message[strlen(message)];
-    memset(&cpy_message, 0, sizeof(cpy_message));
-    strcpy(cpy_message, message);
-
-    token = strtok(cpy_message, attribute_delimter);
-    request_header_values[0].key = "method";
-    request_header_values[0].value = token;
-    token = strtok(NULL, attribute_delimter);
-    request_header_values[1].key = "path";
-    request_header_values[1].value = token;
-    token = strtok(NULL, attribute_delimter);
-    request_header_values[2].key = "http_version";
-    request_header_values[2].value = token;
-
-    token = strtok(message, row_delimter);
-    while(1) {
-        token = strtok(NULL, row_delimter);
-        if(!token)
-            break;
-
-        char cpy_row[strlen(token)];
-        token = strtok(cpy_row, attribute_delimter);
-    }
 }
 
 void render_415(char *ret){
@@ -167,28 +137,25 @@ void generate_text_response(char *body,
 }
 
 extern int respond(char *request_message, char *root_directory, int response_target_fd){
-    KEY_VALUE *request_header_values = NULL;
     KEY_VALUE *response_header_values = NULL;
     FILE *target_file = NULL;
+
+    // TODO Classify
     char *response_header = (char *)malloc(BUFFERSIZE);
     memset(response_header, 0, sizeof(*response_header));
-
-    request_header_values = (KEY_VALUE *)malloc(sizeof(KEY_VALUE) * HEADER_VALUE_SIZE);
     response_header_values = (KEY_VALUE *)malloc(sizeof(KEY_VALUE) * HEADER_VALUE_SIZE);
-    memset(request_header_values, 0, sizeof(*request_header_values));
     memset(response_header_values, 0, sizeof(*response_header_values));
     for(int i = 0; i < HEADER_VALUE_SIZE; i++){
-        request_header_values[i].key = NULL;
-        request_header_values[i].value = NULL;
         response_header_values[i].key = NULL;
         response_header_values[i].value = NULL;
     }
 
-    scan_request_header(request_message, request_header_values);
+    Request *request = Request_new(request_message);
+
     char full_path[PATH_MAX + 1];
     strcpy(full_path, root_directory);
     char tmp_path[BUFFERSIZE];
-    strcpy(tmp_path, request_header_values[1].value);
+    strcpy(tmp_path, request->request_header_values[1].value);
     strcat(full_path, tmp_path);
 
     char resolved_path[PATH_MAX + 1];
@@ -244,7 +211,7 @@ extern int respond(char *request_message, char *root_directory, int response_tar
             return -1;
         }
 
-        cleanup(request_header_values, response_header_values, target_file);
+        cleanup(request, response_header_values, target_file);
         return 0;
     }
 
@@ -278,7 +245,7 @@ extern int respond(char *request_message, char *root_directory, int response_tar
             return -1;
         }
 
-        cleanup(request_header_values, response_header_values, target_file);
+        cleanup(request, response_header_values, target_file);
         return 0;
      }
 
@@ -322,6 +289,6 @@ extern int respond(char *request_message, char *root_directory, int response_tar
         return -1;
     }
 
-    cleanup(request_header_values, response_header_values, target_file);
+    cleanup(request, response_header_values, target_file);
     return 0;
 }
