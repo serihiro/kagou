@@ -1,5 +1,5 @@
 PROGRAM_NAME = kagou
-OBJS = main.o request_handler.o util.o request.o
+OBJS = main.o request_handler.o util.o request.o response.o
 CC = gcc
 CFLAGS = -g -O0 -Wall -Wextra
 
@@ -17,6 +17,9 @@ util.o: src/util.c
 
 request.o: src/request.c
 	$(CC) $(CFLAGS) -c src/request.c
+
+response.o: src/response.c
+		$(CC) $(CFLAGS) -c src/response.c
 
 clean:
 	$(RM) kagou

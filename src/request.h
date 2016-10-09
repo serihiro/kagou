@@ -1,8 +1,7 @@
 #include "util.h"
 typedef struct {
-  char *key;
-  char *value;
-
+    char *key;
+    char *value;
 } REQUSET_KEY_VALUE;
 
 typedef struct {
