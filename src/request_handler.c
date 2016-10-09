@@ -1,28 +1,24 @@
-#include "./request_handler.h"
-#include <sys/socket.h>
-#include <unistd.h>
-#define HEADER_DATE_FORMAT "%a, %d %b %Y %H:%M:%S GMT"
-#define HEADER_SEPARATOR ": "
-#define HEADER_LINE_BREAK_CODE "\r\n"
-#define ROW_BUFFER 4096
-#define HEADER_VALUE_SIZE 10
+#include "request_handler.h"
 
-void cleanup(KEY_VALUE *request_header_values,
-            KEY_VALUE *response_header_values,
+#define HEADER_DATE_FORMAT "%a, %d %b %Y %H:%M:%S GMT"
+#define ROW_BUFFER 4096
+#define HEADER_VALUE_SIZE 10 // temporary define
+
+void cleanup(Request *request,
+            Response *response,
             FILE *target_file){
-    if(request_header_values != NULL){
-        free(request_header_values[4].value);
-        free(request_header_values);
+    if(request != NULL){
+        Request_delete(request);
     }
-    if(response_header_values != NULL){
-        free(response_header_values);
+    if(response != NULL){
+        Response_delete(response);
     }
     if(target_file != NULL){
         fclose(target_file);
     }
 }
 
-void load_text_file(char *ret, FILE *target_file) {
+void load_text_file(Response *response, FILE *target_file) {
      fpos_t fsize = 0;
      fseek(target_file, 0, SEEK_END);
      fgetpos(target_file, &fsize);
@@ -37,37 +33,7 @@ void load_text_file(char *ret, FILE *target_file) {
          strcat(fbuf, rbuf);
      }
 
-     strcpy(ret, fbuf);
-}
-
-void scan_request_header(char *message, KEY_VALUE *request_header_values){
-    char *token;
-    char *attribute_delimter = " ";
-    char *row_delimter = "\n";
-
-    char cpy_message[strlen(message)];
-    memset(&cpy_message, 0, sizeof(cpy_message));
-    strcpy(cpy_message, message);
-
-    token = strtok(cpy_message, attribute_delimter);
-    request_header_values[0].key = "method";
-    request_header_values[0].value = token;
-    token = strtok(NULL, attribute_delimter);
-    request_header_values[1].key = "path";
-    request_header_values[1].value = token;
-    token = strtok(NULL, attribute_delimter);
-    request_header_values[2].key = "http_version";
-    request_header_values[2].value = token;
-
-    token = strtok(message, row_delimter);
-    while(1) {
-        token = strtok(NULL, row_delimter);
-        if(!token)
-            break;
-
-        char cpy_row[strlen(token)];
-        token = strtok(cpy_row, attribute_delimter);
-    }
+     Response_set_body_as_text(response, fbuf);
 }
 
 void render_415(char *ret){
@@ -94,21 +60,6 @@ void render_500(char *ret){
                   <h1>erver Internal Error</h1> \
                   <p>Sorry!</p> \
                   </body></html>");
-}
-
-void create_response_header(char *ret, http_response response) {
-    strcat(ret, response.response_status);
-    strcat(ret, HEADER_LINE_BREAK_CODE);
-
-    for(int i = 0; i < (int)sizeof(response.header_values); i++){
-        if(response.header_values[i].key == NULL)
-            break;
-        strcat(ret, response.header_values[i].key);
-        strcat(ret, HEADER_SEPARATOR);
-        strcat(ret, response.header_values[i].value);
-        strcat(ret, HEADER_LINE_BREAK_CODE);
-    }
-    strcat(ret, HEADER_LINE_BREAK_CODE); // separator of header and body
 }
 
 const mime_map MIME_TYPES[] = {
@@ -145,50 +96,29 @@ char* content_type_from_filename(char* filename){
     return "text/plain";
 }
 
-void generate_text_response(char *body,
-                            char *file_name,
-                            FILE *target_file,
-                            KEY_VALUE *response_header_values,
-                            http_response *response){
-    load_text_file(body, target_file);
-    response_header_values[3].key = "Content-type";
-    response_header_values[3].value = content_type_from_filename(file_name);
-    response_header_values[4].key = "Content-length";
-    // Previously declared `length` as char array(statically).
-    // But sometimes the value of `length`was overwritten in `create_html_message`.
-    // The allocated memory here will be freed in `cleanup`.
-    char *length = (char *)malloc(10);
-    sprintf(length, "%ld", strlen(body));
-    response_header_values[4].value = length;
+void generate_text_response(char *file_name, FILE *target_file, Response *response){
+    load_text_file(response, target_file);
+    response->header_values[3].key = "Content-type";
+    response->header_values[3].value = content_type_from_filename(file_name);
+    response->header_values[4].key = "Content-length";
 
-    response->response_status = "HTTP/1.1 200 OK";
-    response->header_values = response_header_values;
-    response->body = body;
+    char length[10];
+    memset(length, 0, 10);
+    sprintf(length, "%ld", strlen(response->body));
+    response->header_values[4].value = length;
+
+    Response_set_status(response, "HTTP/1.1 200 OK");
 }
 
 extern int respond(char *request_message, char *root_directory, int response_target_fd){
-    KEY_VALUE *request_header_values = NULL;
-    KEY_VALUE *response_header_values = NULL;
     FILE *target_file = NULL;
-    char *response_header = (char *)malloc(BUFFERSIZE);
-    memset(response_header, 0, sizeof(*response_header));
 
-    request_header_values = (KEY_VALUE *)malloc(sizeof(KEY_VALUE) * HEADER_VALUE_SIZE);
-    response_header_values = (KEY_VALUE *)malloc(sizeof(KEY_VALUE) * HEADER_VALUE_SIZE);
-    memset(request_header_values, 0, sizeof(*request_header_values));
-    memset(response_header_values, 0, sizeof(*response_header_values));
-    for(int i = 0; i < HEADER_VALUE_SIZE; i++){
-        request_header_values[i].key = NULL;
-        request_header_values[i].value = NULL;
-        response_header_values[i].key = NULL;
-        response_header_values[i].value = NULL;
-    }
+    Request *request = Request_new(request_message);
 
-    scan_request_header(request_message, request_header_values);
     char full_path[PATH_MAX + 1];
     strcpy(full_path, root_directory);
     char tmp_path[BUFFERSIZE];
-    strcpy(tmp_path, request_header_values[1].value);
+    strcpy(tmp_path, request->request_header_values[1].value);
     strcat(full_path, tmp_path);
 
     char resolved_path[PATH_MAX + 1];
@@ -199,18 +129,16 @@ extern int respond(char *request_message, char *root_directory, int response_tar
     memset(body, 0, sizeof(body));
     memset(html_message, 0, sizeof(html_message));
 
-    http_response response = { body, response_header_values, html_message };
-    memset(&response, 0, sizeof(response));
-
     char systime[128];
     formated_system_datetime(systime, HEADER_DATE_FORMAT);
 
-    response_header_values[0].key = "Date";
-    response_header_values[0].value = systime;
-    response_header_values[1].key = "Server";
-    response_header_values[1].value = SERVER_NAME;
-    response_header_values[2].key = "Connection";
-    response_header_values[2].value = "close"; // FIXME toriisogi
+    Response *response = Response_new();
+    response->header_values[0].key = "Date";
+    response->header_values[0].value = systime;
+    response->header_values[1].key = "Server";
+    response->header_values[1].value = SERVER_NAME;
+    response->header_values[2].key = "Connection";
+    response->header_values[2].value = "close"; // FIXME toriisogi
 
     struct stat st;
     int stat_result;
@@ -218,22 +146,21 @@ extern int respond(char *request_message, char *root_directory, int response_tar
     // file exists and regular file
     if (stat_result != 0 || (st.st_mode & S_IFMT) != S_IFREG){
         render_404(body);
-        response_header_values[3].key =  "Content-type";
-        response_header_values[3].value = "text/html";
-        response_header_values[4].key = "Content-length";
+        response->header_values[3].key =  "Content-type";
+        response->header_values[3].value = "text/html";
+        response->header_values[4].key = "Content-length";
         char length[100];
         sprintf(length, "%ld", strlen(body));
-        response_header_values[4].value = length;
+        response->header_values[4].value = length;
 
-        response.response_status = "HTTP/1.1 404 Not Found";
-        response.header_values = response_header_values;
-        response.body = body;
-        create_response_header(response_header, response);
-        int send_message_size = send(response_target_fd, response_header, strlen(response_header), 0);
+        Response_set_status(response, "HTTP/1.1 404 Not Found");
+        Response_set_body_as_text(response, body);
+        Response_create_header(response);
+        int send_message_size = send(response_target_fd, response->header, strlen(response->header), 0);
         if(send_message_size < 0) {
             return -1;
         }
-        send_message_size = send(response_target_fd, response.body, strlen(response.body), 0);
+        send_message_size = send(response_target_fd, response->body, strlen(response->body), 0);
         if(send_message_size < 0) {
             return -1;
         }
@@ -244,7 +171,7 @@ extern int respond(char *request_message, char *root_directory, int response_tar
             return -1;
         }
 
-        cleanup(request_header_values, response_header_values, target_file);
+        cleanup(request, response, target_file);
         return 0;
     }
 
@@ -252,22 +179,21 @@ extern int respond(char *request_message, char *root_directory, int response_tar
     if (target_file == NULL) {
         perror("Failed to fopen target file");
         render_500(body);
-        response_header_values[3].key = "Content-type";
-        response_header_values[3].value = "text/html";
-        response_header_values[4].key = "Content-length";
+        response->header_values[3].key = "Content-type";
+        response->header_values[3].value = "text/html";
+        response->header_values[4].key = "Content-length";
         char length[100];
         sprintf(length, "%ld", strlen(body));
-        response_header_values[4].value = length;
+        response->header_values[4].value = length;
 
-        response.response_status = "HTTP/1.1 500 Internal Server Error";
-        response.header_values = response_header_values;
-        response.body = body;
-        create_response_header(response_header, response);
-        int send_message_size = send(response_target_fd, response_header, strlen(response_header), 0);
+        Response_set_status(response, "HTTP/1.1 500 Internal Server Error");
+        Response_set_body_as_text(response, body);
+        Response_create_header(response);
+        int send_message_size = send(response_target_fd, response->header, strlen(response->header), 0);
         if(send_message_size < 0) {
             return -1;
         }
-        send_message_size = send(response_target_fd, response.body, strlen(response.body), 0);
+        send_message_size = send(response_target_fd, response->body, strlen(response->body), 0);
         if(send_message_size < 0) {
             return -1;
         }
@@ -278,7 +204,7 @@ extern int respond(char *request_message, char *root_directory, int response_tar
             return -1;
         }
 
-        cleanup(request_header_values, response_header_values, target_file);
+        cleanup(request, response, target_file);
         return 0;
      }
 
@@ -291,27 +217,28 @@ extern int respond(char *request_message, char *root_directory, int response_tar
     if(strstr(file_name, ".html") != NULL || strstr(file_name, ".htm") != NULL ||
        strstr(file_name, ".js") != NULL   || strstr(file_name, ".css") != NULL ||
        strstr(file_name, ".csv") != NULL) {
-        generate_text_response(body, file_name, target_file, response_header_values, &response);
+        generate_text_response(file_name, target_file, response);
     } else {
         render_415(body);
-        response_header_values[3].key = "Content-type";
-        response_header_values[3].value = "text/html";
-        response_header_values[4].key = "Content-length";
+        response->header_values[3].key = "Content-type";
+        response->header_values[3].value = "text/html";
+        response->header_values[4].key = "Content-length";
         char length[100];
         sprintf(length, "%ld", strlen(body));
-        response_header_values[4].value = length;
+        response->header_values[4].value = length;
 
-        response.response_status =  "HTTP/1.1 415 Unsupported Media Type";
-        response.header_values = response_header_values;
-        response.body = body;
+        Response_set_status(response, "HTTP/1.1 415 Unsupported Media Type");
+        Response_set_body_as_text(response, body);
+        Response_create_header(response);
     }
 
-    create_response_header(response_header, response);
-    int send_message_size = send(response_target_fd, response_header, strlen(response_header), 0);
+    Response_create_header(response);
+    int send_message_size = send(response_target_fd, response->header, strlen(response->header), 0);
     if(send_message_size < 0) {
         return -1;
     }
-    send_message_size = send(response_target_fd, response.body, strlen(response.body), 0);
+
+    send_message_size = send(response_target_fd, response->body, strlen(response->body), 0);
     if(send_message_size < 0) {
         return -1;
     }
@@ -322,6 +249,6 @@ extern int respond(char *request_message, char *root_directory, int response_tar
         return -1;
     }
 
-    cleanup(request_header_values, response_header_values, target_file);
+    cleanup(request, response, target_file);
     return 0;
 }
