@@ -16,31 +16,23 @@ Response *Response_new(){
 }
 
 void Response_set_header(Response *this, char *response_header) {
-    if(this->header == NULL){
-        this->header = (char *)malloc(strlen(response_header));
-    } else {
-        this->header = (char *)realloc(this->header, strlen(response_header));
-    }
+    this->header = (char *)malloc(strlen(response_header));
+    this->header = (char *)realloc(this->header, strlen(response_header));
+
     memset(this->header, 0, strlen(response_header));
     strcpy(this->header, response_header);
 }
 
 void Response_set_body_as_text(Response *this, char *response_body) {
-    if(this->body == NULL){
-        this->body = (char *)malloc(strlen(response_body) * 4); //utf8 support
-    } else {
-        this->body = (char *)realloc(this->body, strlen(response_body) * 4);
-    }
+    this->body = (char *)realloc(this->body, strlen(response_body) * 4);
+
     memset(this->body, 0, strlen(response_body) * 4);
     strcpy(this->body, response_body);
 }
 
 void Response_set_status(Response *this, char *response_status) {
-    if(this->status == NULL){
-        this->status = (char *)malloc(strlen(response_status));
-    } else {
-        this->status = (char *)realloc(this->status, strlen(response_status));
-    }
+    this->status = (char *)realloc(this->status, strlen(response_status));
+
     memset(this->status, 0, strlen(response_status));
     strcpy(this->status, response_status);
 }
