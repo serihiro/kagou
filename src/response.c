@@ -16,7 +16,6 @@ Response *Response_new(){
 }
 
 void Response_set_header(Response *this, char *response_header) {
-    this->header = (char *)malloc(strlen(response_header));
     this->header = (char *)realloc(this->header, strlen(response_header));
 
     memset(this->header, 0, strlen(response_header));
