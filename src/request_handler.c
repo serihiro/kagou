@@ -19,17 +19,17 @@ void cleanup(Request *request,
 }
 
 void load_text_file(Response *response, FILE *target_file) {
-     fpos_t fsize = 0;
+     fpos_t fsize;
      fseek(target_file, 0, SEEK_END);
      fgetpos(target_file, &fsize);
      rewind(target_file);
 
-     char fbuf[fsize + 1];
+     char fbuf[sizeof(fsize) + 1];
      char rbuf[ROW_BUFFER];
      memset(&fbuf, 0, sizeof(fbuf));
      memset(&rbuf, 0, sizeof(rbuf));
      // 1行ごとの長さ取ってbuffer作ってstrcatでくっつける
-     while(fgets(rbuf, fsize, target_file) != NULL){
+     while(fgets(rbuf, sizeof(fsize), target_file) != NULL){
          strcat(fbuf, rbuf);
      }
 
