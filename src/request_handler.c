@@ -28,8 +28,8 @@ void load_text_file(Response *response, FILE *target_file) {
      char rbuf[ROW_BUFFER];
      memset(&fbuf, 0, sizeof(fbuf));
      memset(&rbuf, 0, sizeof(rbuf));
-     
-     while(fgets(rbuf, fsize, target_file) != NULL){
+
+     while(fgets(rbuf, ROW_BUFFER, target_file) != NULL){
          strcat(fbuf, rbuf);
      }
 
