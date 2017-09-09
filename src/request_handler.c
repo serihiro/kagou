@@ -98,14 +98,10 @@ char* content_type_from_filename(char* filename){
 
 void generate_text_response(char *file_name, FILE *target_file, Response *response){
     load_text_file(response, target_file);
-    response->header_values[3].key = "Content-type";
-    response->header_values[3].value = content_type_from_filename(file_name);
-    response->header_values[4].key = "Content-length";
-
-    char length[10];
-    memset(length, 0, 10);
-    sprintf(length, "%ld", strlen(response->body));
-    response->header_values[4].value = length;
+    strcpy(response->header_values[3].key, "Content-type");
+    strcpy(response->header_values[3].value, content_type_from_filename(file_name));
+    strcpy(response->header_values[4].key, "Content-length");
+    sprintf(response->header_values[4].value, "%ld", strlen(response->body));
 
     Response_set_status(response, "HTTP/1.1 200 OK");
 }
@@ -133,12 +129,12 @@ extern int respond(char *request_message, char *root_directory, int response_tar
     formated_system_datetime(systime, HEADER_DATE_FORMAT);
 
     Response *response = Response_new();
-    response->header_values[0].key = "Date";
-    response->header_values[0].value = systime;
-    response->header_values[1].key = "Server";
-    response->header_values[1].value = SERVER_NAME;
-    response->header_values[2].key = "Connection";
-    response->header_values[2].value = "close"; // FIXME toriisogi
+    strcpy(response->header_values[0].key, "Date");
+    strcpy(response->header_values[0].value, systime);
+    strcpy(response->header_values[1].key, "Server");
+    strcpy(response->header_values[1].value, SERVER_NAME);
+    strcpy(response->header_values[2].key, "Connection");
+    strcpy(response->header_values[2].value, "close"); // FIXME toriisogi
 
     struct stat st;
     int stat_result;
@@ -146,12 +142,10 @@ extern int respond(char *request_message, char *root_directory, int response_tar
     // file exists and regular file
     if (stat_result != 0 || (st.st_mode & S_IFMT) != S_IFREG){
         render_404(body);
-        response->header_values[3].key =  "Content-type";
-        response->header_values[3].value = "text/html";
-        response->header_values[4].key = "Content-length";
-        char length[100];
-        sprintf(length, "%ld", strlen(body));
-        response->header_values[4].value = length;
+        strcpy(response->header_values[3].key, "Content-type");
+        strcpy(response->header_values[3].value, "text/html");
+        strcpy(response->header_values[4].key, "Content-length");
+        sprintf(response->header_values[4].value, "%ld", strlen(body));
 
         Response_set_status(response, "HTTP/1.1 404 Not Found");
         Response_set_body_as_text(response, body);
@@ -179,12 +173,10 @@ extern int respond(char *request_message, char *root_directory, int response_tar
     if (target_file == NULL) {
         perror("Failed to fopen target file");
         render_500(body);
-        response->header_values[3].key = "Content-type";
-        response->header_values[3].value = "text/html";
-        response->header_values[4].key = "Content-length";
-        char length[100];
-        sprintf(length, "%ld", strlen(body));
-        response->header_values[4].value = length;
+        strcpy(response->header_values[3].key, "Content-type");
+        strcpy(response->header_values[3].value, "text/html");
+        strcpy(response->header_values[4].key, "Content-length");
+        sprintf(response->header_values[4].value, "%ld", strlen(body));
 
         Response_set_status(response, "HTTP/1.1 500 Internal Server Error");
         Response_set_body_as_text(response, body);
@@ -220,12 +212,10 @@ extern int respond(char *request_message, char *root_directory, int response_tar
         generate_text_response(file_name, target_file, response);
     } else {
         render_415(body);
-        response->header_values[3].key = "Content-type";
-        response->header_values[3].value = "text/html";
-        response->header_values[4].key = "Content-length";
-        char length[100];
-        sprintf(length, "%ld", strlen(body));
-        response->header_values[4].value = length;
+        sprintf(response->header_values[3].key, "Content-type");
+        sprintf(response->header_values[3].value, "text/html");
+        sprintf(response->header_values[4].key, "Content-length");
+        sprintf(response->header_values[4].value, "%ld", strlen(body));
 
         Response_set_status(response, "HTTP/1.1 415 Unsupported Media Type");
         Response_set_body_as_text(response, body);

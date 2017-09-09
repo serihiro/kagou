@@ -2,7 +2,7 @@
 
 Request* Request_new(char *raw_request) {
     Request *this = (Request *)malloc(sizeof(Request));
-    this->raw_request = (char *)malloc(strlen(raw_request));
+    this->raw_request = (char *)malloc(strlen(raw_request) + 1);
     strcpy(this->raw_request, raw_request);
 
     this->request_header_values = (REQUSET_KEY_VALUE *)malloc(sizeof(REQUSET_KEY_VALUE) * REQUEST_HEADER_VALUE_SIZE);
