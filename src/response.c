@@ -9,8 +9,8 @@ Response *Response_new(){
     this->header_values = (REPONSE_KEY_VALUE *)malloc(sizeof(REPONSE_KEY_VALUE) * RESPONSE_HEADER_VALUE_SIZE);
     memset(this->header_values, 0, sizeof(*this->header_values));
     for(int i = 0; i < RESPONSE_HEADER_VALUE_SIZE; i++){
-        this->header_values[i].key = NULL;
-        this->header_values[i].value = NULL;
+        this->header_values[i].key = (char *)malloc(RESPONSE_HEADER_VALUE_BUFFER_SIZE);
+        this->header_values[i].value = (char *)malloc(RESPONSE_HEADER_VALUE_BUFFER_SIZE);
     }
     return this;
 }
