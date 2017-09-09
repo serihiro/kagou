@@ -7,8 +7,8 @@ Request* Request_new(char *raw_request) {
 
     this->request_header_values = (REQUSET_KEY_VALUE *)malloc(sizeof(REQUSET_KEY_VALUE) * REQUEST_HEADER_VALUE_SIZE);
     for(int i = 0; i < REQUEST_HEADER_VALUE_SIZE; i++){
-        this->request_header_values[i].key = NULL;
-        this->request_header_values[i].value = NULL;
+        this->request_header_values[i].key = (char *)malloc(RESPONSE_HEADER_VALUE_BUFFER_SIZE);
+        this->request_header_values[i].value = (char *)malloc(RESPONSE_HEADER_VALUE_BUFFER_SIZE);
     }
 
     _Request_scan(this);
@@ -23,19 +23,14 @@ void Request_delete(Request *this){
 }
 
 void _Request_scan(Request *this) {
-    char *token;
-
     char cpy_message[strlen(this->raw_request)];
     memset(&cpy_message, 0, sizeof(cpy_message));
     strcpy(cpy_message, this->raw_request);
 
-    token = strtok(cpy_message, ATTRIBUTE_DELIMITER);
-    this->request_header_values[0].key = "method";
-    this->request_header_values[0].value = token;
-    token = strtok(NULL, ATTRIBUTE_DELIMITER);
-    this->request_header_values[1].key = "path";
-    this->request_header_values[1].value = token;
-    token = strtok(NULL, ATTRIBUTE_DELIMITER);
-    this->request_header_values[2].key = "http_version";
-    this->request_header_values[2].value = token;
+    strcpy(this->request_header_values[0].key, "method");
+    strcpy(this->request_header_values[0].value, strtok(cpy_message, ATTRIBUTE_DELIMITER));
+    strcpy(this->request_header_values[1].key, "path");
+    strcpy(this->request_header_values[1].value, strtok(NULL, ATTRIBUTE_DELIMITER));
+    strcpy(this->request_header_values[2].key, "http_version");
+    strcpy(this->request_header_values[2].value, strtok(NULL, ATTRIBUTE_DELIMITER));
 }
