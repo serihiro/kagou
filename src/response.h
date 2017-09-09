@@ -13,7 +13,7 @@ typedef struct {
 } Response;
 
 #define RESPONSE_HEADER_VALUE_SIZE 10
-#define RESPONSE_HEADER_BUFFER_SIZE 1024
+#define RESPONSE_HEADER_BUFFER_SIZE 16385 // 16 KiB + 1byte
 #define HEADER_SEPARATOR ": "
 #define HEADER_LINE_BREAK_CODE "\r\n"
 
