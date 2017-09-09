@@ -19,19 +19,19 @@ void cleanup(Request *request,
 }
 
 void load_text_file(Response *response, FILE *target_file) {
-     fpos_t fsize;
-     fseek(target_file, 0, SEEK_END);
-     fgetpos(target_file, &fsize);
-     rewind(target_file);
+    fpos_t fsize;
+    fseek(target_file, 0, SEEK_END);
+    fgetpos(target_file, &fsize);
+    rewind(target_file);
 
-     char fbuf[fsize];
-     char rbuf[ROW_BUFFER];
-     memset(&fbuf, 0, sizeof(fbuf));
-     memset(&rbuf, 0, sizeof(rbuf));
+    char fbuf[fsize];
+    char rbuf[ROW_BUFFER];
+    memset(&fbuf, 0, sizeof(fbuf));
+    memset(&rbuf, 0, sizeof(rbuf));
 
-     while(fgets(rbuf, ROW_BUFFER, target_file) != NULL){
-         strcat(fbuf, rbuf);
-     }
+    while(fgets(rbuf, ROW_BUFFER, target_file) != NULL){
+        strcat(fbuf, rbuf);
+    }
 
      Response_set_body_as_text(response, fbuf);
 }
