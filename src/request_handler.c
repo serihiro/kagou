@@ -105,7 +105,8 @@ void generate_text_response(char *file_name, FILE *target_file, Response *respon
     char length[10];
     memset(length, 0, 10);
     sprintf(length, "%ld", strlen(response->body));
-    response->header_values[4].value = length;
+    response->header_values[4].value = (char *)malloc(strlen(length) + 1);
+    strcpy(response->header_values[4].value, length);
 
     Response_set_status(response, "HTTP/1.1 200 OK");
 }
