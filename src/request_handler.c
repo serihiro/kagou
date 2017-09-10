@@ -37,7 +37,7 @@ void load_text_file(Response *response, FILE *target_file) {
 }
 
 void render_415(char *ret){
-    sprintf(ret, "<html><head> \
+    strcpy(ret, "<html><head> \
                   <title>415 Unsupported Media Type</title> \
                   </head><body> \
                   <h1>415 Unsupported Media Type</h1> \
@@ -45,7 +45,7 @@ void render_415(char *ret){
 }
 
 void render_404(char *ret){
-    sprintf(ret, "<html><head> \
+    strcpy(ret, "<html><head> \
                   <title>404 Not Found</title> \
                   </head><body> \
                   <h1>Not Found</h1> \
@@ -54,7 +54,7 @@ void render_404(char *ret){
 }
 
 void render_500(char *ret){
-    sprintf(ret, "<html><head> \
+    strcpy(ret, "<html><head> \
                   <title>500 Server Internal Error</title> \
                   </head><body> \
                   <h1>erver Internal Error</h1> \
@@ -212,9 +212,9 @@ extern int respond(char *request_message, char *root_directory, int response_tar
         generate_text_response(file_name, target_file, response);
     } else {
         render_415(body);
-        sprintf(response->header_values[3].key, "Content-type");
-        sprintf(response->header_values[3].value, "text/html");
-        sprintf(response->header_values[4].key, "Content-length");
+        strcpy(response->header_values[3].key, "Content-type");
+        strcpy(response->header_values[3].value, "text/html");
+        strcpy(response->header_values[4].key, "Content-length");
         sprintf(response->header_values[4].value, "%ld", strlen(body));
 
         Response_set_status(response, "HTTP/1.1 415 Unsupported Media Type");
