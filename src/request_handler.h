@@ -8,6 +8,7 @@
 #define SERVER_NAME "kagou"
 #define FILE_BINARY 0
 #define FILE_ASCII 1
+#define HEADER_DATE_FORMAT "%a, %d %b %Y %H:%M:%S GMT"
 
 typedef struct {
   char *key;
