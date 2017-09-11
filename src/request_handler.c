@@ -1,9 +1,5 @@
 #include "request_handler.h"
 
-#define HEADER_DATE_FORMAT "%a, %d %b %Y %H:%M:%S GMT"
-#define ROW_BUFFER 4096
-#define HEADER_VALUE_SIZE 10 // temporary define
-
 void cleanup(Request *request,
             Response *response,
             FILE *target_file){
@@ -19,21 +15,18 @@ void cleanup(Request *request,
 }
 
 void load_text_file(Response *response, FILE *target_file) {
-    fpos_t fsize;
+    fpos_t fpos;
     fseek(target_file, 0, SEEK_END);
-    fgetpos(target_file, &fsize);
+    fgetpos(target_file, &fpos);
     rewind(target_file);
 
-    char fbuf[fsize];
-    char rbuf[ROW_BUFFER];
-    memset(&fbuf, 0, sizeof(fbuf));
-    memset(&rbuf, 0, sizeof(rbuf));
+    long fsize = sizeof(char) * (fpos + 1);
+    char * fbuf = (char *)malloc(fsize);
+    memset(fbuf, 0, fsize);
 
-    while(fgets(rbuf, ROW_BUFFER, target_file) != NULL){
-        strcat(fbuf, rbuf);
-    }
-
-     Response_set_body_as_text(response, fbuf);
+    fread(fbuf, fsize, 1, target_file);
+    Response_set_body_as_text(response, fbuf);
+    free(fbuf);
 }
 
 void render_415(char *ret){
