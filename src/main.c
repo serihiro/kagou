@@ -1,4 +1,4 @@
-#include "./request_handler.h"
+#include "request_handler.h"
 #include <netinet/in.h>
 #include <signal.h>
 #include <stdio.h>

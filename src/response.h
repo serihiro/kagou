@@ -1,15 +1,13 @@
-#include "util.h"
+#ifndef HEADER_RESPONSE
+#define HEADER_RESPONSE
 
-typedef struct {
-  char *key;
-  char *value;
-} REPONSE_KEY_VALUE;
+#include "util.h"
 
 typedef struct {
   char *header;
   char *body;
   char *status;
-  REPONSE_KEY_VALUE *header_values;
+  Tuple *header_values;
 } Response;
 
 #define RESPONSE_HEADER_VALUE_SIZE 10
@@ -24,3 +22,4 @@ void Response_set_header(Response *this, char *header);
 void Response_set_body_as_text(Response *this, char *body);
 void Response_set_status(Response *this, char *status);
 void Response_create_header(Response *this);
+#endif

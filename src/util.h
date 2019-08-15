@@ -1,3 +1,6 @@
+#ifndef HEADER_UTIL
+#define HEADER_UTIL
+
 #include <limits.h>
 #include <math.h>
 #include <stdio.h>
@@ -12,3 +15,9 @@
 struct tm *local_time();
 extern void formated_system_datetime(char *ret, char *format);
 extern void last_strtok(char *ret, char *target, char *pattern);
+
+typedef struct {
+  char *key;
+  char *value;
+} Tuple;
+#endif

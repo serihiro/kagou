@@ -1,3 +1,6 @@
+#ifndef HEADER_REQUEST_HANDLER
+#define HEADER_REQUEST_HANDLER
+
 #include "request.h"
 #include "response.h"
 #include "util.h"
@@ -35,3 +38,4 @@ extern int respond(char *request_message, char *root_directory,
 char *content_type_from_filename(char *filename);
 void generate_text_response(char *file_name, FILE *target_file,
                             Response *response);
+#endif

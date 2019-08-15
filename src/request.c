@@ -5,8 +5,8 @@ Request *Request_new(char *raw_request) {
   this->raw_request = (char *)malloc(strlen(raw_request) + 1);
   strcpy(this->raw_request, raw_request);
 
-  this->request_header_values = (REQUSET_KEY_VALUE *)malloc(
-      sizeof(REQUSET_KEY_VALUE) * REQUEST_HEADER_VALUE_SIZE);
+  this->request_header_values =
+      (Tuple *)malloc(sizeof(Tuple) * REQUEST_HEADER_VALUE_SIZE);
   for (int i = 0; i < REQUEST_HEADER_VALUE_SIZE; i++) {
     this->request_header_values[i].key =
         (char *)malloc(RESPONSE_HEADER_VALUE_BUFFER_SIZE);
@@ -30,13 +30,13 @@ void _Request_scan(Request *this) {
   memset(&cpy_message, 0, sizeof(cpy_message));
   strcpy(cpy_message, this->raw_request);
 
-  strcpy(this->request_header_values[0].key, "method");
+  strcpy(this->request_header_values[0].key, HEADER_KEY_METHOD);
   strcpy(this->request_header_values[0].value,
          strtok(cpy_message, ATTRIBUTE_DELIMITER));
-  strcpy(this->request_header_values[1].key, "path");
+  strcpy(this->request_header_values[1].key, HEADER_KEY_PATH);
   strcpy(this->request_header_values[1].value,
          strtok(NULL, ATTRIBUTE_DELIMITER));
-  strcpy(this->request_header_values[2].key, "http_version");
+  strcpy(this->request_header_values[2].key, HEADER_KEY_HTTP_VERSION);
   strcpy(this->request_header_values[2].value,
          strtok(NULL, ATTRIBUTE_DELIMITER));
 }
