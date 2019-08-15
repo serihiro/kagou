@@ -1,12 +1,12 @@
 #include "util.h"
 typedef struct {
-    char *key;
-    char *value;
+  char *key;
+  char *value;
 } REQUSET_KEY_VALUE;
 
 typedef struct {
-    char *raw_request;
-    REQUSET_KEY_VALUE *request_header_values;
+  char *raw_request;
+  REQUSET_KEY_VALUE *request_header_values;
 } Request;
 
 #define REQUEST_HEADER_VALUE_SIZE 10

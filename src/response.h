@@ -1,20 +1,20 @@
 #include "util.h"
 
 typedef struct {
-    char *key;
-    char *value;
+  char *key;
+  char *value;
 } REPONSE_KEY_VALUE;
 
 typedef struct {
-    char *header;
-    char *body;
-    char *status;
-    REPONSE_KEY_VALUE *header_values;
+  char *header;
+  char *body;
+  char *status;
+  REPONSE_KEY_VALUE *header_values;
 } Response;
 
 #define RESPONSE_HEADER_VALUE_SIZE 10
 #define RESPONSE_HEADER_VALUE_BUFFER_SIZE 1025 // 1KiB + 1byte
-#define RESPONSE_HEADER_BUFFER_SIZE 16385 // 16 KiB + 1byte
+#define RESPONSE_HEADER_BUFFER_SIZE 16385      // 16 KiB + 1byte
 #define HEADER_SEPARATOR ": "
 #define HEADER_LINE_BREAK_CODE "\r\n"
 

@@ -1,14 +1,13 @@
+#include <limits.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
-#include <string.h>
-#include <math.h>
-#include <sys/types.h>
 #include <sys/stat.h>
-#include <limits.h>
+#include <sys/types.h>
+#include <time.h>
 
-#define BUFFERSIZE  1024
+#define BUFFERSIZE 1024
 
 struct tm *local_time();
 extern void formated_system_datetime(char *ret, char *format);
