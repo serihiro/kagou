@@ -10,31 +10,25 @@ Response *Response_new() {
       (Tuple *)calloc(RESPONSE_HEADER_VALUE_SIZE, sizeof(Tuple));
   for (int i = 0; i < RESPONSE_HEADER_VALUE_SIZE; i++) {
     this->header_values[i].key =
-        (char *)malloc(RESPONSE_HEADER_VALUE_BUFFER_SIZE);
+        (char *)calloc(RESPONSE_HEADER_VALUE_BUFFER_SIZE, sizeof(char));
     this->header_values[i].value =
-        (char *)malloc(RESPONSE_HEADER_VALUE_BUFFER_SIZE);
+        (char *)calloc(RESPONSE_HEADER_VALUE_BUFFER_SIZE, sizeof(char));
   }
   return this;
 }
 
 void Response_set_header(Response *this, char *response_header) {
-  this->header = (char *)realloc(this->header, strlen(response_header));
-
-  memset(this->header, 0, strlen(response_header));
+  this->header = (char *)calloc(strlen(response_header) + 1, sizeof(char));
   strcpy(this->header, response_header);
 }
 
 void Response_set_body_as_text(Response *this, char *response_body) {
-  this->body = (char *)realloc(this->body, strlen(response_body) * 4);
-
-  memset(this->body, 0, strlen(response_body) * 4);
+  this->body = (char *)calloc(strlen(response_body) + 1, sizeof(char));
   strcpy(this->body, response_body);
 }
 
 void Response_set_status(Response *this, char *response_status) {
-  this->status = (char *)realloc(this->status, strlen(response_status));
-
-  memset(this->status, 0, strlen(response_status));
+  this->status = (char *)calloc(strlen(response_status) + 1, sizeof(char));
   strcpy(this->status, response_status);
 }
 

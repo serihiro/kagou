@@ -1,6 +1,6 @@
 PROGRAM_NAME = kagou
 CC = gcc
-CFLAGS = -g -O2 -Wall -Wextra
+CFLAGS = -g -O2 -Wall -Wextra -fsanitize=address
 SRCS = $(wildcard src/*.c)
 OBJS=$(SRCS:.c=.o)
 HEADERS = $(wildcard src/*.h)
