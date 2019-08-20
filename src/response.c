@@ -1,11 +1,8 @@
 #include "response.h"
 
 Response *Response_new() {
-  Response *this = (Response *)malloc(sizeof(Response));
+  Response *this = (Response *)calloc(1, sizeof(Response));
 
-  this->header = NULL;
-  this->body = NULL;
-  this->status = NULL;
   this->header_values =
       (Tuple *)calloc(RESPONSE_HEADER_VALUE_SIZE, sizeof(Tuple));
   for (int i = 0; i < RESPONSE_HEADER_VALUE_SIZE; i++) {

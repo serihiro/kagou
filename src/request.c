@@ -1,17 +1,17 @@
 #include "request.h"
 
 Request *Request_new(char *raw_request) {
-  Request *this = (Request *)malloc(sizeof(Request));
-  this->raw_request = (char *)malloc(strlen(raw_request) + 1);
+  Request *this = (Request *)calloc(1, sizeof(Request));
+  this->raw_request = (char *)calloc(strlen(raw_request) + 1, sizeof(char));
   strcpy(this->raw_request, raw_request);
 
   this->request_header_values =
-      (Tuple *)malloc(sizeof(Tuple) * REQUEST_HEADER_VALUE_SIZE);
+      (Tuple *)calloc(REQUEST_HEADER_VALUE_SIZE, sizeof(Tuple));
   for (int i = 0; i < REQUEST_HEADER_VALUE_SIZE; i++) {
     this->request_header_values[i].key =
-        (char *)malloc(RESPONSE_HEADER_VALUE_BUFFER_SIZE);
+        (char *)calloc(RESPONSE_HEADER_VALUE_BUFFER_SIZE, sizeof(char));
     this->request_header_values[i].value =
-        (char *)malloc(RESPONSE_HEADER_VALUE_BUFFER_SIZE);
+        (char *)calloc(RESPONSE_HEADER_VALUE_BUFFER_SIZE, sizeof(char));
   }
 
   _Request_scan(this);
