@@ -26,31 +26,9 @@ void load_text_file(Response *response, FILE *target_file) {
   free(fbuf);
 }
 
-void render_415(char *ret) {
-  strcpy(ret, "<html><head> \
-                  <title>415 Unsupported Media Type</title> \
-                  </head><body> \
-                  <h1>415 Unsupported Media Type</h1> \
-                  </body></html>");
-}
-
-void render_404(char *ret) {
-  strcpy(ret, "<html><head> \
-                  <title>404 Not Found</title> \
-                  </head><body> \
-                  <h1>Not Found</h1> \
-                  <p>The requested URL is Not Found</p> \
-                  </body></html>");
-}
-
-void render_500(char *ret) {
-  strcpy(ret, "<html><head> \
-                  <title>500 Server Internal Error</title> \
-                  </head><body> \
-                  <h1>erver Internal Error</h1> \
-                  <p>Sorry!</p> \
-                  </body></html>");
-}
+void render_404(char *ret) { strcpy(ret, NOT_FOUND_BODY); }
+void render_415(char *ret) { strcpy(ret, UNSUPPORTED_MEDIA); }
+void render_500(char *ret) { strcpy(ret, BAD_REQUEST); }
 
 const mime_map MIME_TYPES[] = {
     {".htm", "text/html", FILE_ASCII},
