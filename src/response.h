@@ -13,8 +13,8 @@ typedef struct {
 #define RESPONSE_HEADER_VALUE_SIZE 10
 #define RESPONSE_HEADER_VALUE_BUFFER_SIZE 1025 // 1KiB + 1byte
 #define RESPONSE_HEADER_BUFFER_SIZE 16385      // 16 KiB + 1byte
-#define HEADER_SEPARATOR ": "
-#define HEADER_LINE_BREAK_CODE "\r\n"
+static const char *HEADER_SEPARATOR = ": ";
+static const char *HEADER_LINE_BREAK_CODE = "\r\n";
 
 Response *Response_new();
 void Response_delete(Response *this);

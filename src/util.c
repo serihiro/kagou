@@ -10,7 +10,7 @@ struct tm *local_time() {
   return t_st;
 }
 
-extern void formated_system_datetime(char *ret, char *format) {
+extern void formated_system_datetime(char *ret, const char *format) {
   struct tm *t_st;
   char buf[128];
 
@@ -19,7 +19,7 @@ extern void formated_system_datetime(char *ret, char *format) {
   strcpy(ret, buf);
 }
 
-extern void last_strtok(char *ret, char *target, char *pattern) {
+extern void last_strtok(char *ret, char *target, const char *pattern) {
   if (strstr(target, pattern) == NULL) {
     strcpy(ret, "");
     return;
