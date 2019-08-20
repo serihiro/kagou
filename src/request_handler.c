@@ -91,7 +91,6 @@ extern int respond(char *request_message, char *root_directory,
   char resolved_path[PATH_MAX + 1];
   realpath(full_path, resolved_path);
 
-  char *body = calloc(1024 * 500 + 1, sizeof(char));
   char systime[128];
   formated_system_datetime(systime, HEADER_DATE_FORMAT);
 
@@ -108,6 +107,7 @@ extern int respond(char *request_message, char *root_directory,
   stat_result = stat(resolved_path, &st);
   // file exists and regular file
   if (stat_result != 0 || (st.st_mode & S_IFMT) != S_IFREG) {
+    char *body = calloc(1024 * 500 + 1, sizeof(char));
     render_404(body);
     strcpy(response->header_values[3].key, "Content-type");
     strcpy(response->header_values[3].value, "text/html");
@@ -134,6 +134,7 @@ extern int respond(char *request_message, char *root_directory,
       return -1;
     }
 
+    free(body);
     cleanup(request, response, target_file);
     return 0;
   }
@@ -141,6 +142,7 @@ extern int respond(char *request_message, char *root_directory,
   target_file = fopen(resolved_path, "r");
   if (target_file == NULL) {
     perror("Failed to fopen target file");
+    char *body = calloc(1024 * 500 + 1, sizeof(char));
     render_500(body);
     strcpy(response->header_values[3].key, "Content-type");
     strcpy(response->header_values[3].value, "text/html");
@@ -167,6 +169,7 @@ extern int respond(char *request_message, char *root_directory,
       return -1;
     }
 
+    free(body);
     cleanup(request, response, target_file);
     return 0;
   }
@@ -182,6 +185,7 @@ extern int respond(char *request_message, char *root_directory,
       strstr(file_name, ".csv") != NULL) {
     generate_text_response(file_name, target_file, response);
   } else {
+    char *body = calloc(1024 * 500 + 1, sizeof(char));
     render_415(body);
     strcpy(response->header_values[3].key, "Content-type");
     strcpy(response->header_values[3].value, "text/html");
@@ -191,6 +195,7 @@ extern int respond(char *request_message, char *root_directory,
     Response_set_status(response, "HTTP/1.1 415 Unsupported Media Type");
     Response_set_body_as_text(response, body);
     Response_create_header(response);
+    free(body);
   }
 
   Response_create_header(response);
