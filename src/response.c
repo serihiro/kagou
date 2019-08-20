@@ -7,8 +7,7 @@ Response *Response_new() {
   this->body = NULL;
   this->status = NULL;
   this->header_values =
-      (Tuple *)malloc(sizeof(Tuple) * RESPONSE_HEADER_VALUE_SIZE);
-  memset(this->header_values, 0, sizeof(*this->header_values));
+      (Tuple *)calloc(RESPONSE_HEADER_VALUE_SIZE, sizeof(Tuple));
   for (int i = 0; i < RESPONSE_HEADER_VALUE_SIZE; i++) {
     this->header_values[i].key =
         (char *)malloc(RESPONSE_HEADER_VALUE_BUFFER_SIZE);
@@ -40,8 +39,7 @@ void Response_set_status(Response *this, char *response_status) {
 }
 
 void Response_create_header(Response *this) {
-  char *tmp_header = (char *)malloc(RESPONSE_HEADER_BUFFER_SIZE);
-  memset(tmp_header, 0, RESPONSE_HEADER_BUFFER_SIZE);
+  char *tmp_header = (char *)calloc(RESPONSE_HEADER_BUFFER_SIZE, sizeof(char));
 
   strcat(tmp_header, this->status);
   strcat(tmp_header, HEADER_LINE_BREAK_CODE);

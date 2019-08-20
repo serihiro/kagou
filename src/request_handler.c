@@ -19,8 +19,7 @@ void load_text_file(Response *response, FILE *target_file) {
   rewind(target_file);
 
   long fsize = sizeof(char) * (fpos + 1);
-  char *fbuf = (char *)malloc(fsize);
-  memset(fbuf, 0, fsize);
+  char *fbuf = (char *)calloc(fsize, sizeof(char));
 
   fread(fbuf, fsize, 1, target_file);
   Response_set_body_as_text(response, fbuf);
@@ -114,11 +113,7 @@ extern int respond(char *request_message, char *root_directory,
   char resolved_path[PATH_MAX + 1];
   realpath(full_path, resolved_path);
 
-  char body[1024 * 500];
-  char html_message[1024 * 1000];
-  memset(body, 0, sizeof(body));
-  memset(html_message, 0, sizeof(html_message));
-
+  char *body = calloc(1024 * 500 + 1, sizeof(char));
   char systime[128];
   formated_system_datetime(systime, HEADER_DATE_FORMAT);
 

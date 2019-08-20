@@ -26,8 +26,8 @@ void Request_delete(Request *this) {
 }
 
 void _Request_scan(Request *this) {
-  char cpy_message[strlen(this->raw_request)];
-  memset(&cpy_message, 0, sizeof(cpy_message));
+  char *cpy_message =
+      (char *)calloc(strlen(this->raw_request) + 1, sizeof(char));
   strcpy(cpy_message, this->raw_request);
 
   strcpy(this->request_header_values[0].key, HEADER_KEY_METHOD);
