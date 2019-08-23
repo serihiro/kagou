@@ -15,25 +15,25 @@
 static const char *SERVER_NAME = "kagou";
 static const char *HEADER_DATE_FORMAT = "%a, %d %b %Y %H:%M:%S GMT";
 
-static const char *NOT_FOUND_BODY = "<html><head> \
-                  <title>404 Not Found</title> \
-                  </head><body> \
-                  <h1>Not Found</h1> \
-                  <p>The requested URL is Not Found</p> \
-                  </body></html>";
+static const char *NOT_FOUND_BODY = "<html><head>\
+<title>404 Not Found</title>\
+</head><body>\
+<h1>Not Found</h1>\
+<p>The requested URL is Not Found</p>\
+</body></html>";
 
-static const char *UNSUPPORTED_MEDIA = "<html><head> \
-                  <title>415 Unsupported Media Type</title> \
-                  </head><body> \
-                  <h1>415 Unsupported Media Type</h1> \
-                  </body></html>";
+static const char *UNSUPPORTED_MEDIA = "<html><head>\
+<title>415 Unsupported Media Type</title>\
+</head><body>\
+<h1>415 Unsupported Media Type</h1>\
+</body></html>";
 
-static const char *BAD_REQUEST = "<html><head> \
-                  <title>500 Server Internal Error</title> \
-                  </head><body> \
-                  <h1>erver Internal Error</h1> \
-                  <p>Sorry!</p> \
-                  </body></html>";
+static const char *BAD_REQUEST = "<html><head>\
+<title>500 Server Internal Error</title>\
+</head><body>\
+<h1>erver Internal Error</h1>\
+<p>Sorry!</p>\
+</body></html>";
 
 typedef struct {
   char *key;
