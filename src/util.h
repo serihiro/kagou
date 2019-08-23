@@ -10,8 +10,6 @@
 #include <sys/types.h>
 #include <time.h>
 
-#define BUFFERSIZE 1024
-
 struct tm *local_time();
 extern void formated_system_datetime(char *ret, const char *format);
 extern void last_strtok(char *ret, char *target, const char *pattern);

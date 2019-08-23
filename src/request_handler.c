@@ -82,16 +82,18 @@ extern int respond(char *request_message, char *root_directory,
 
   Request *request = Request_new(request_message);
 
-  char full_path[PATH_MAX + 1];
+  char *full_path = (char *)calloc(MAXPATHLEN + 1, sizeof(char));
   strcpy(full_path, root_directory);
-  char tmp_path[BUFFERSIZE];
-  strcpy(tmp_path, request->request_header_values[1].value);
-  strcat(full_path, tmp_path);
+  strcat(full_path, request->request_header_values[1].value);
 
-  char resolved_path[PATH_MAX + 1];
+  char *resolved_path = (char *)calloc(MAXPATHLEN + 1, sizeof(char));
   realpath(full_path, resolved_path);
+  if (resolved_path == NULL) {
+    perror("Failed to solve path");
+    exit(1);
+  }
 
-  char systime[128];
+  char *systime = (char *)calloc(128 + 1, sizeof(char));
   formated_system_datetime(systime, HEADER_DATE_FORMAT);
 
   Response *response = Response_new();

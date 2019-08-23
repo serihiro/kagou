@@ -8,7 +8,10 @@
 #include <sys/uio.h>
 #include <unistd.h>
 
-#define DEFAULT_ROOT_DIRECTORY "."
+#define ROOT_DIRECTORY_STRING_LENGTH 4097     // 4k + 1
+#define REQUEST_MESSAGE_STRING_LENGTH 1024001 // 1M + 1
+
+static const char *DEFAULT_ROOT_DIRECTORY = ".";
 
 int accept_socket_fd;
 int request_socket_fd;
@@ -21,6 +24,7 @@ void sigint_handler() {
   if (request_socket_fd) {
     close(request_socket_fd);
   }
+
   exit(0);
 }
 
@@ -41,7 +45,8 @@ int main(int argc, char **argv) {
     puts("Usage: /path/to/binary *port root_file_directory");
     exit(1);
   }
-  char root_directory[BUFFERSIZE];
+  char *root_directory =
+      (char *)calloc(ROOT_DIRECTORY_STRING_LENGTH, sizeof(char));
   if (argc == 3) {
     strcpy(root_directory, argv[2]);
   } else {
@@ -78,8 +83,10 @@ int main(int argc, char **argv) {
   memset(&client_address, 0, sizeof(client_address));
 
   socklen_t len = sizeof(client_address);
-  char raw_message[BUFFERSIZE];
+  char *raw_message =
+      (char *)calloc(REQUEST_MESSAGE_STRING_LENGTH, sizeof(char));
 
+  int raw_message_size = 0;
   while (1) {
     int accept_socket_fd =
         accept(request_socket_fd, (struct sockaddr *)&client_address, &len);
@@ -90,8 +97,7 @@ int main(int argc, char **argv) {
     }
 
     while (1) {
-      memset(&raw_message, 0, sizeof(raw_message));
-      int raw_message_size = recv(accept_socket_fd, raw_message, BUFFERSIZE, 0);
+      raw_message_size = recv(accept_socket_fd, raw_message, 1024, 0);
       if (!raw_message_size || raw_message_size < 0) {
         close(accept_socket_fd);
         break;
@@ -99,7 +105,10 @@ int main(int argc, char **argv) {
 
       respond(raw_message, root_directory, accept_socket_fd);
     }
+    memset(raw_message, 0, REQUEST_MESSAGE_STRING_LENGTH);
   }
 
+  free(root_directory);
+  free(raw_message);
   return (0);
 }

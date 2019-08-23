@@ -4,6 +4,7 @@
 #include "request.h"
 #include "response.h"
 #include "util.h"
+#include <sys/param.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
