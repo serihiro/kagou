@@ -6,12 +6,12 @@ Request *Request_new(char *raw_request) {
   strcpy(this->raw_request, raw_request);
 
   this->request_header_values =
-      (Tuple *)calloc(REQUEST_HEADER_VALUE_SIZE, sizeof(Tuple));
-  for (int i = 0; i < REQUEST_HEADER_VALUE_SIZE; i++) {
+      (Tuple *)calloc(REQUEST_HEADER_ITEM_MAX_SIZE, sizeof(Tuple));
+  for (int i = 0; i < REQUEST_HEADER_ITEM_MAX_SIZE; i++) {
     this->request_header_values[i].key =
-        (char *)calloc(RESPONSE_HEADER_VALUE_BUFFER_SIZE, sizeof(char));
+        (char *)calloc(REQUEST_HEADER_ITEM_STRING_LENGTH, sizeof(char));
     this->request_header_values[i].value =
-        (char *)calloc(RESPONSE_HEADER_VALUE_BUFFER_SIZE, sizeof(char));
+        (char *)calloc(REQUEST_HEADER_ITEM_STRING_LENGTH, sizeof(char));
   }
 
   _Request_scan(this);

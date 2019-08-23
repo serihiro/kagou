@@ -11,8 +11,8 @@ typedef struct {
 } Response;
 
 #define RESPONSE_HEADER_VALUE_SIZE 10
-#define RESPONSE_HEADER_VALUE_BUFFER_SIZE 1025 // 1KiB + 1byte
-#define RESPONSE_HEADER_BUFFER_SIZE 16385      // 16 KiB + 1byte
+#define RESPONSE_HEADER_ITEM_STRING_LENGTH 1025    // 1k + 1 chars
+#define RESPONSE_HEADER_BUFFER_STRING_LENGTH 10241 // 10k + 1 chars
 static const char *HEADER_SEPARATOR = ": ";
 static const char *HEADER_LINE_BREAK_CODE = "\r\n";
 

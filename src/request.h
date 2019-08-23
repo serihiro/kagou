@@ -8,8 +8,8 @@ typedef struct {
   Tuple *request_header_values;
 } Request;
 
-#define REQUEST_HEADER_VALUE_SIZE 10
-#define RESPONSE_HEADER_VALUE_BUFFER_SIZE 1025 // 1KiB + 1byte
+#define REQUEST_HEADER_ITEM_MAX_SIZE 10
+#define REQUEST_HEADER_ITEM_STRING_LENGTH 1025 // 1K + 1 chars
 
 static const char *ATTRIBUTE_DELIMITER = " ";
 static const char *HEADER_KEY_METHOD = "method";
