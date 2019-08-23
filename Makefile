@@ -11,6 +11,8 @@ main: $(OBJS)
 main.o: src/main.c request_handler.o util.o request.o response.o
 	$(CC) $(CFLAGS) -c src/main.c
 
+$(OBJS): $(HEADERS)
+
 request_handler.o: util.o src/request_handler.c src/request_handler.h
 	$(CC) $(CFLAGS) -c src/request_handler.c
 
