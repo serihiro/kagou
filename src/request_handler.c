@@ -26,10 +26,6 @@ void load_text_file(Response *response, FILE *target_file) {
   free(fbuf);
 }
 
-void render_404(char *ret) { strcpy(ret, NOT_FOUND_BODY); }
-void render_415(char *ret) { strcpy(ret, UNSUPPORTED_MEDIA); }
-void render_500(char *ret) { strcpy(ret, BAD_REQUEST); }
-
 const mime_map MIME_TYPES[] = {
     {".htm", "text/html", FILE_ASCII},
     {".html", "text/html", FILE_ASCII},
@@ -79,7 +75,6 @@ void generate_text_response(char *file_name, FILE *target_file,
 extern int respond(char *request_message, char *root_directory,
                    int response_target_fd) {
   FILE *target_file = NULL;
-
   Request *request = Request_new(request_message);
 
   char *full_path = (char *)calloc(MAXPATHLEN + 1, sizeof(char));
@@ -88,6 +83,7 @@ extern int respond(char *request_message, char *root_directory,
 
   char *resolved_path = (char *)calloc(MAXPATHLEN + 1, sizeof(char));
   realpath(full_path, resolved_path);
+  free(full_path);
   if (resolved_path == NULL) {
     perror("Failed to solve path");
     exit(1);
@@ -103,14 +99,15 @@ extern int respond(char *request_message, char *root_directory,
   strcpy(response->header_values[1].value, SERVER_NAME);
   strcpy(response->header_values[2].key, "Connection");
   strcpy(response->header_values[2].value, "close"); // FIXME toriisogi
+  free(systime);
 
   struct stat st;
   int stat_result;
   stat_result = stat(resolved_path, &st);
+
   // file exists and regular file
   if (stat_result != 0 || (st.st_mode & S_IFMT) != S_IFREG) {
-    char *body = calloc(1024 * 500 + 1, sizeof(char));
-    render_404(body);
+    const char *body = NOT_FOUND_BODY;
     strcpy(response->header_values[3].key, "Content-type");
     strcpy(response->header_values[3].value, "text/html");
     strcpy(response->header_values[4].key, "Content-length");
@@ -136,7 +133,6 @@ extern int respond(char *request_message, char *root_directory,
       return -1;
     }
 
-    free(body);
     cleanup(request, response, target_file);
     return 0;
   }
@@ -144,8 +140,7 @@ extern int respond(char *request_message, char *root_directory,
   target_file = fopen(resolved_path, "r");
   if (target_file == NULL) {
     perror("Failed to fopen target file");
-    char *body = calloc(1024 * 500 + 1, sizeof(char));
-    render_500(body);
+    const char *body = BAD_REQUEST;
     strcpy(response->header_values[3].key, "Content-type");
     strcpy(response->header_values[3].value, "text/html");
     strcpy(response->header_values[4].key, "Content-length");
@@ -171,15 +166,15 @@ extern int respond(char *request_message, char *root_directory,
       return -1;
     }
 
-    free(body);
+    free(resolved_path);
     cleanup(request, response, target_file);
+
     return 0;
   }
 
-  char file_name[PATH_MAX + 1];
-  char copied_resolved_path[PATH_MAX + 1];
-  strcpy(copied_resolved_path, resolved_path);
-  last_strtok(file_name, copied_resolved_path, "/");
+  char *file_name = calloc(MAXPATHLEN + 1, sizeof(char));
+  last_strtok(file_name, resolved_path, "/");
+  free(resolved_path);
 
   // TODO functionize
   if (strstr(file_name, ".html") != NULL || strstr(file_name, ".htm") != NULL ||
@@ -187,8 +182,7 @@ extern int respond(char *request_message, char *root_directory,
       strstr(file_name, ".csv") != NULL) {
     generate_text_response(file_name, target_file, response);
   } else {
-    char *body = calloc(1024 * 500 + 1, sizeof(char));
-    render_415(body);
+    const char *body = UNSUPPORTED_MEDIA;
     strcpy(response->header_values[3].key, "Content-type");
     strcpy(response->header_values[3].value, "text/html");
     strcpy(response->header_values[4].key, "Content-length");
@@ -197,8 +191,8 @@ extern int respond(char *request_message, char *root_directory,
     Response_set_status(response, "HTTP/1.1 415 Unsupported Media Type");
     Response_set_body_as_text(response, body);
     Response_create_header(response);
-    free(body);
   }
+  free(file_name);
 
   Response_create_header(response);
   int send_message_size =

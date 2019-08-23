@@ -18,8 +18,8 @@ static const char *HEADER_LINE_BREAK_CODE = "\r\n";
 
 Response *Response_new();
 void Response_delete(Response *this);
-void Response_set_header(Response *this, char *header);
-void Response_set_body_as_text(Response *this, char *body);
-void Response_set_status(Response *this, char *status);
+void Response_set_header(Response *this, const char *header);
+void Response_set_body_as_text(Response *this, const char *body);
+void Response_set_status(Response *this, const char *status);
 void Response_create_header(Response *this);
 #endif

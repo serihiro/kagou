@@ -1,5 +1,8 @@
 {
     "cSpell.words": [
         "kagou"
-    ]
+    ],
+    "files.associations": {
+        "algorithm": "c"
+    }
 }

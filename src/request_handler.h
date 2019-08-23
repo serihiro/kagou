@@ -52,9 +52,6 @@ typedef struct {
   const int file_type;
 } mime_map;
 
-void render_404(char *ret);
-void render_415(char *ret);
-void render_500(char *ret);
 extern int respond(char *request_message, char *root_directory,
                    int response_target_fd);
 char *content_type_from_filename(char *filename);

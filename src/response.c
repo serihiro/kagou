@@ -14,17 +14,17 @@ Response *Response_new() {
   return this;
 }
 
-void Response_set_header(Response *this, char *response_header) {
+void Response_set_header(Response *this, const char *response_header) {
   this->header = (char *)calloc(strlen(response_header) + 1, sizeof(char));
   strcpy(this->header, response_header);
 }
 
-void Response_set_body_as_text(Response *this, char *response_body) {
+void Response_set_body_as_text(Response *this, const char *response_body) {
   this->body = (char *)calloc(strlen(response_body) + 1, sizeof(char));
   strcpy(this->body, response_body);
 }
 
-void Response_set_status(Response *this, char *response_status) {
+void Response_set_status(Response *this, const char *response_status) {
   this->status = (char *)calloc(strlen(response_status) + 1, sizeof(char));
   strcpy(this->status, response_status);
 }
