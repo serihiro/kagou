@@ -7,6 +7,10 @@ OBJS=$(SRCS:.c=.o)
 LIB_OBJS=$(LIB_SRCS:.c=.o)
 HEADERS = $(wildcard src/*.h)
 
+# Test related variables
+TEST_SRCS = $(wildcard tests/*.c)
+TEST_BINS = $(TEST_SRCS:.c=)
+
 main: $(OBJS)
 	$(CC) $(CFLAGS) -o $(PROGRAM_NAME) $(OBJS)
 
@@ -27,15 +31,38 @@ response.o: util.o src/response.c src/response.h
 util.o: src/util.c src/util.h
 	$(CC) $(CFLAGS) -c src/util.c
 
+# Build individual test executables
+tests/%: tests/%.c $(LIB_OBJS) $(HEADERS)
+	$(CC) $(CFLAGS) -o $@ $< $(LIB_OBJS)
+
+# Build all tests
+.PHONY: build-tests
+build-tests: $(TEST_BINS)
+
+# Run all tests
+.PHONY: test
+test: build-tests
+	@echo "Running all tests..."
+	@echo "=================="
+	@for test in $(TEST_BINS); do \
+		echo "Running $$test..."; \
+		$$test || exit 1; \
+		echo ""; \
+	done
+	@echo "All tests passed!"
+
+# Run a specific test
+.PHONY: test-%
+test-%: tests/%
+	@echo "Running $<..."
+	@$<
+
+# Legacy test support
 tests/test.o: tests/test.c $(HEADERS)
 	$(CC) $(CFLAGS) -c tests/test.c -o tests/test.o
 
 tests/run_tests: $(LIB_OBJS) tests/test.o
 	$(CC) $(CFLAGS) -o tests/run_tests $(LIB_OBJS) tests/test.o
-
-.PHONY: test
-test: tests/run_tests
-	./tests/run_tests
 
 .PNONY :format
 format:
@@ -45,3 +72,4 @@ clean:
 	$(RM) kagou
 	$(RM) $(OBJS)
 	$(RM) tests/run_tests tests/test.o
+	$(RM) $(TEST_BINS)
