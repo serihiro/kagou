@@ -1,10 +1,79 @@
 #include "request.h"
+#include <ctype.h>
 #include <strings.h>
 
 const char *ATTRIBUTE_DELIMITER = " ";
 const char *HEADER_KEY_METHOD = "method";
 const char *HEADER_KEY_PATH = "path";
 const char *HEADER_KEY_HTTP_VERSION = "http_version";
+
+// HTTP/1.0 headers
+static const char *HTTP_1_0_HEADERS[] = {"Host",
+                                         "User-Agent",
+                                         "Accept",
+                                         "Accept-Language",
+                                         "Accept-Encoding",
+                                         "Content-Type",
+                                         "Content-Length",
+                                         "Authorization",
+                                         "Connection",
+                                         "Referer",
+                                         "Cookie",
+                                         "Date",
+                                         "If-Modified-Since",
+                                         "Last-Modified",
+                                         "Pragma",
+                                         "Cache-Control",
+                                         "From",
+                                         NULL};
+
+// HTTP/1.1 additional headers (includes all HTTP/1.0 headers)
+static const char *HTTP_1_1_HEADERS[] = {
+    "Host", "User-Agent", "Accept", "Accept-Language", "Accept-Encoding",
+    "Content-Type", "Content-Length", "Authorization", "Connection", "Referer",
+    "Cookie", "Date", "If-Modified-Since", "Last-Modified", "Pragma",
+    "Cache-Control", "From",
+    // HTTP/1.1 specific
+    "Transfer-Encoding", "TE", "Trailer", "Upgrade", "Via", "Warning", "Expect",
+    "Max-Forwards", "Proxy-Authorization", "Range", "If-Range", "If-Match",
+    "If-None-Match", "If-Unmodified-Since", "Age", "ETag", "Location",
+    "Proxy-Authenticate", "Retry-After", "Server", "Vary", "WWW-Authenticate",
+    "Allow", "Content-Encoding", "Content-Language", "Content-Location",
+    "Content-MD5", "Content-Range", "Expires", "Extension-Header", NULL};
+
+// Check if header is valid for the given HTTP version
+static int is_valid_header(const char *header_name, const char *http_version) {
+  // HTTP/0.9 doesn't support headers
+  if (strstr(http_version, "HTTP/0.9") != NULL) {
+    return 0;
+  }
+
+  // Check header name format (alphanumeric and hyphen only)
+  for (const char *p = header_name; *p; p++) {
+    if (!isalnum(*p) && *p != '-') {
+      return 0;
+    }
+  }
+
+  const char **valid_headers = NULL;
+  if (strstr(http_version, "HTTP/1.0") != NULL) {
+    valid_headers = HTTP_1_0_HEADERS;
+  } else if (strstr(http_version, "HTTP/1.1") != NULL) {
+    valid_headers = HTTP_1_1_HEADERS;
+  } else {
+    // Unknown version, allow all well-formed headers
+    return 1;
+  }
+
+  // Case-insensitive comparison
+  for (int i = 0; valid_headers[i] != NULL; i++) {
+    if (strcasecmp(header_name, valid_headers[i]) == 0) {
+      return 1;
+    }
+  }
+
+  return 0;
+}
 
 Request *Request_new(char *raw_request) {
   Request *this = (Request *)calloc(1, sizeof(Request));
@@ -38,46 +107,99 @@ void Request_delete(Request *this) {
 }
 
 void _Request_scan(Request *this) {
+  int header_index = 0;
+  char *current_line = this->raw_request;
+  char *http_version = NULL;
 
-  // Find the end of the request line
-  char *request_end = strstr(this->raw_request, "\r\n");
-  if (request_end == NULL) {
+  // Process request line first
+  char *line_end = strstr(current_line, "\r\n");
+  if (line_end == NULL) {
     return;
   }
 
-  // Copy and parse the request line
-  size_t request_line_len = request_end - this->raw_request;
-  char *request_line = (char *)calloc(request_line_len + 1, sizeof(char));
-  strncpy(request_line, this->raw_request, request_line_len);
+  // Copy the request line
+  size_t line_len = line_end - current_line;
+  char *request_line = (char *)calloc(line_len + 1, sizeof(char));
+  strncpy(request_line, current_line, line_len);
 
-  strcpy(this->request_header_values[0].key, HEADER_KEY_METHOD);
-  strcpy(this->request_header_values[0].value,
-         strtok(request_line, ATTRIBUTE_DELIMITER));
-  strcpy(this->request_header_values[1].key, HEADER_KEY_PATH);
-  strcpy(this->request_header_values[1].value,
-         strtok(NULL, ATTRIBUTE_DELIMITER));
-  strcpy(this->request_header_values[2].key, HEADER_KEY_HTTP_VERSION);
-  char *http_version = strtok(NULL, ATTRIBUTE_DELIMITER);
-  if (http_version != NULL) {
-    strcpy(this->request_header_values[2].value, http_version);
+  // Parse request line by finding spaces
+  char *method_start = request_line;
+  char *method_end = strchr(method_start, ' ');
+  if (method_end == NULL) {
+    // Malformed request - only method provided
+    strcpy(this->request_header_values[header_index].key, HEADER_KEY_METHOD);
+    strcpy(this->request_header_values[header_index].value, method_start);
+    header_index++;
+
+    strcpy(this->request_header_values[header_index].key, HEADER_KEY_PATH);
+    strcpy(this->request_header_values[header_index].value,
+           "/"); // Default path
+    header_index++;
+
+    strcpy(this->request_header_values[header_index].key,
+           HEADER_KEY_HTTP_VERSION);
+    strcpy(this->request_header_values[header_index].value,
+           "HTTP/0.9"); // Assume HTTP/0.9
+
+    free(request_line);
+    this->keep_alive = 0;
+    return;
   }
+  *method_end = '\0';
+
+  char *path_start = method_end + 1;
+  char *path_end = strchr(path_start, ' ');
+  if (path_end == NULL) {
+    // HTTP/0.9 style request (no version)
+    strcpy(this->request_header_values[header_index].key, HEADER_KEY_METHOD);
+    strcpy(this->request_header_values[header_index].value, method_start);
+    header_index++;
+
+    strcpy(this->request_header_values[header_index].key, HEADER_KEY_PATH);
+    strcpy(this->request_header_values[header_index].value, path_start);
+    header_index++;
+
+    strcpy(this->request_header_values[header_index].key,
+           HEADER_KEY_HTTP_VERSION);
+    strcpy(this->request_header_values[header_index].value, "HTTP/0.9");
+    header_index++;
+
+    http_version = "HTTP/0.9";
+  } else {
+    *path_end = '\0';
+    char *version_start = path_end + 1;
+
+    strcpy(this->request_header_values[header_index].key, HEADER_KEY_METHOD);
+    strcpy(this->request_header_values[header_index].value, method_start);
+    header_index++;
+
+    strcpy(this->request_header_values[header_index].key, HEADER_KEY_PATH);
+    strcpy(this->request_header_values[header_index].value, path_start);
+    header_index++;
+
+    strcpy(this->request_header_values[header_index].key,
+           HEADER_KEY_HTTP_VERSION);
+    strcpy(this->request_header_values[header_index].value, version_start);
+    header_index++;
+
+    http_version = this->request_header_values[2].value;
+  }
+
   free(request_line);
 
-  // Default keep-alive behavior: HTTP/1.1 defaults to keep-alive, HTTP/1.0
-  // defaults to close
-  if (strstr(this->request_header_values[2].value, "HTTP/1.1") != NULL) {
+  // Default keep-alive behavior
+  if (strstr(http_version, "HTTP/1.1") != NULL) {
     this->keep_alive = 1;
   } else {
     this->keep_alive = 0;
   }
 
-  // Parse headers
-  int header_index = 3;
-  char *headers_start = request_end + 2; // Skip \r\n
-  char *current_line = headers_start;
+  // Move to headers section
+  current_line = line_end + 2; // Skip \r\n
 
+  // Parse headers
   while (*current_line != '\0' && header_index < REQUEST_HEADER_ITEM_MAX_SIZE) {
-    char *line_end = strstr(current_line, "\r\n");
+    line_end = strstr(current_line, "\r\n");
     if (line_end == NULL) {
       break;
     }
@@ -88,7 +210,7 @@ void _Request_scan(Request *this) {
     }
 
     // Copy the header line
-    size_t line_len = line_end - current_line;
+    line_len = line_end - current_line;
     char *header_line = (char *)calloc(line_len + 1, sizeof(char));
     strncpy(header_line, current_line, line_len);
 
@@ -103,19 +225,23 @@ void _Request_scan(Request *this) {
         value++;
       }
 
-      strcpy(this->request_header_values[header_index].key, key);
-      strcpy(this->request_header_values[header_index].value, value);
+      // Validate header based on HTTP version
+      if (is_valid_header(key, http_version)) {
+        strcpy(this->request_header_values[header_index].key, key);
+        strcpy(this->request_header_values[header_index].value, value);
 
-      // Check for Connection header
-      if (strcasecmp(key, "Connection") == 0) {
-        if (strcasecmp(value, "close") == 0) {
-          this->keep_alive = 0;
-        } else if (strcasecmp(value, "keep-alive") == 0) {
-          this->keep_alive = 1;
+        // Check for Connection header
+        if (strcasecmp(key, "Connection") == 0) {
+          if (strcasecmp(value, "close") == 0) {
+            this->keep_alive = 0;
+          } else if (strcasecmp(value, "keep-alive") == 0) {
+            this->keep_alive = 1;
+          }
         }
-      }
 
-      header_index++;
+        header_index++;
+      }
+      // Invalid headers are silently skipped
     }
 
     free(header_line);
