@@ -1,4 +1,5 @@
 #include "request_handler.h"
+#include <sys/stat.h>
 
 const char *SERVER_NAME = "kagou";
 const char *HEADER_DATE_FORMAT = "%a, %d %b %Y %H:%M:%S GMT";
@@ -147,12 +148,6 @@ extern int respond(char *request_message, char *root_directory,
   char *resolved_path = (char *)calloc(MAXPATHLEN + 1, sizeof(char));
   char *realpath_result = realpath(full_path, resolved_path);
   free(full_path);
-  if (realpath_result == NULL) {
-    perror("Failed to solve path");
-    free(resolved_path);
-    cleanup(request, NULL, NULL);
-    return -1;
-  }
 
   char *systime = (char *)calloc(128 + 1, sizeof(char));
   formated_system_datetime(systime, HEADER_DATE_FORMAT);
@@ -166,12 +161,51 @@ extern int respond(char *request_message, char *root_directory,
   strcpy(response->header_values[2].value, "close"); // FIXME toriisogi
   free(systime);
 
+  if (realpath_result == NULL) {
+    // realpath failed, treat as 404
+    const char *body = NOT_FOUND_BODY;
+    strcpy(response->header_values[3].key, "Content-type");
+    strcpy(response->header_values[3].value, "text/html");
+    strcpy(response->header_values[4].key, "Content-length");
+    snprintf(response->header_values[4].value, sizeof(response->header_values[4].value), "%ld", strlen(body));
+
+    Response_set_status(response, "HTTP/1.1 404 Not Found");
+    Response_set_body_as_text(response, body);
+    Response_create_header(response);
+    int send_message_size =
+        send(response_target_fd, response->header, strlen(response->header), 0);
+    if (send_message_size < 0) {
+      free(resolved_path);
+      cleanup(request, response, NULL);
+      return -1;
+    }
+    send_message_size =
+        send(response_target_fd, response->body, strlen(response->body), 0);
+    if (send_message_size < 0) {
+      free(resolved_path);
+      cleanup(request, response, NULL);
+      return -1;
+    }
+
+    // To send FIN
+    int close_result = close(response_target_fd);
+    if (close_result < 0) {
+      free(resolved_path);
+      cleanup(request, response, NULL);
+      return -1;
+    }
+
+    free(resolved_path);
+    cleanup(request, response, NULL);
+    return 0;
+  }
+
   struct stat st;
   int stat_result;
   stat_result = stat(resolved_path, &st);
 
   // file exists and regular file
-  if (stat_result != 0 || (st.st_mode & S_IFMT) != S_IFREG) {
+  if (stat_result != 0 || !S_ISREG(st.st_mode)) {
     const char *body = NOT_FOUND_BODY;
     strcpy(response->header_values[3].key, "Content-type");
     strcpy(response->header_values[3].value, "text/html");

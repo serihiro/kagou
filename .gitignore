@@ -2,3 +2,5 @@
 kagou
 node_modules/
 test-results
+tests/run_tests
+
