@@ -36,6 +36,7 @@ typedef struct {
   const int file_type;
 } mime_map;
 
+// Returns 1 if connection should be kept alive, 0 if it should be closed
 extern int respond(char *request_message, char *root_directory,
                    int response_target_fd);
 char *content_type_from_filename(char *filename);

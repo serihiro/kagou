@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
+#include <sys/time.h>
 #include <sys/types.h>
 #include <sys/uio.h>
 #include <unistd.h>
@@ -123,16 +124,35 @@ int main(int argc, char **argv) {
       exit(1);
     }
 
-    while (1) {
-      raw_message_size = recv(accept_socket_fd, raw_message, 1024, 0);
+    // Set socket timeout for keep-alive connections
+    struct timeval timeout;
+    timeout.tv_sec = 5; // 5 seconds timeout
+    timeout.tv_usec = 0;
+    setsockopt(accept_socket_fd, SOL_SOCKET, SO_RCVTIMEO, &timeout,
+               sizeof(timeout));
+
+    int keep_alive = 1;
+    while (keep_alive) {
+      raw_message_size = recv(accept_socket_fd, raw_message,
+                              REQUEST_MESSAGE_STRING_LENGTH - 1, 0);
       if (!raw_message_size || raw_message_size < 0) {
         close(accept_socket_fd);
         accept_socket_fd = 0;
         break;
       }
 
-      respond(raw_message, root_directory, accept_socket_fd);
+      // Ensure null termination
+      raw_message[raw_message_size] = '\0';
+
+      keep_alive = respond(raw_message, root_directory, accept_socket_fd);
       memset(raw_message, 0, REQUEST_MESSAGE_STRING_LENGTH);
+
+      // If respond returns -1 (error) or 0 (close), close the connection
+      if (keep_alive <= 0) {
+        close(accept_socket_fd);
+        accept_socket_fd = 0;
+        break;
+      }
     }
   }
 
