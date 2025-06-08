@@ -6,6 +6,7 @@
 #include "util.h"
 #include <sys/param.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 #define HEADER_BUFFER 1024

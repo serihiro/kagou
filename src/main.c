@@ -21,7 +21,7 @@ int request_socket_fd = 0;
 void cleanup_and_exit(int sig) {
   printf("\nReceived signal %d, cleaning up...\n", sig);
   fflush(stdout);
-  
+
   if (accept_socket_fd > 0) {
     shutdown(accept_socket_fd, SHUT_RDWR);
     close(accept_socket_fd);
@@ -42,19 +42,19 @@ void init_signal() {
   memset(&sa, 0, sizeof(sa));
   sa.sa_handler = cleanup_and_exit;
   sa.sa_flags = SA_RESTART;
-  
+
   // SIGINTハンドラーの設定
   if (sigaction(SIGINT, &sa, NULL) < 0) {
     perror("Failed to bind SIGINT handler");
     exit(1);
   }
-  
+
   // SIGTERMハンドラーの設定
   if (sigaction(SIGTERM, &sa, NULL) < 0) {
     perror("Failed to bind SIGTERM handler");
     exit(1);
   }
-  
+
   signal(SIGPIPE, SIG_IGN);
 }
 
@@ -81,7 +81,8 @@ int main(int argc, char **argv) {
 
   // SO_REUSEADDRオプションを設定して、ポートの再利用を許可
   int reuse = 1;
-  if (setsockopt(request_socket_fd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse)) < 0) {
+  if (setsockopt(request_socket_fd, SOL_SOCKET, SO_REUSEADDR, &reuse,
+                 sizeof(reuse)) < 0) {
     perror("Failed to set SO_REUSEADDR");
     close(request_socket_fd);
     exit(1);
@@ -131,8 +132,8 @@ int main(int argc, char **argv) {
       }
 
       respond(raw_message, root_directory, accept_socket_fd);
+      memset(raw_message, 0, REQUEST_MESSAGE_STRING_LENGTH);
     }
-    memset(raw_message, 0, REQUEST_MESSAGE_STRING_LENGTH);
   }
 
   free(root_directory);
