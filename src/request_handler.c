@@ -13,15 +13,13 @@ void cleanup(Request *request, Response *response, FILE *target_file) {
 }
 
 void load_text_file(Response *response, FILE *target_file) {
-  fpos_t fpos;
   fseek(target_file, 0, SEEK_END);
-  fgetpos(target_file, &fpos);
+  long fsize = ftell(target_file);
   rewind(target_file);
 
-  long fsize = sizeof(char) * (fpos + 1);
-  char *fbuf = (char *)calloc(fsize, sizeof(char));
+  char *fbuf = (char *)calloc(fsize + 1, sizeof(char));
 
-  fread(fbuf, fsize, 1, target_file);
+  fread(fbuf, 1, fsize, target_file);
   Response_set_body_as_text(response, fbuf);
   free(fbuf);
 }
