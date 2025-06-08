@@ -1,5 +1,28 @@
 #include "request_handler.h"
 
+const char *SERVER_NAME = "kagou";
+const char *HEADER_DATE_FORMAT = "%a, %d %b %Y %H:%M:%S GMT";
+
+const char *NOT_FOUND_BODY = "<html><head>\
+<title>404 Not Found</title>\
+</head><body>\
+<h1>Not Found</h1>\
+<p>The requested URL is Not Found</p>\
+</body></html>";
+
+const char *UNSUPPORTED_MEDIA = "<html><head>\
+<title>415 Unsupported Media Type</title>\
+</head><body>\
+<h1>415 Unsupported Media Type</h1>\
+</body></html>";
+
+const char *BAD_REQUEST = "<html><head>\
+<title>500 Server Internal Error</title>\
+</head><body>\
+<h1>erver Internal Error</h1>\
+<p>Sorry!</p>\
+</body></html>";
+
 void cleanup(Request *request, Response *response, FILE *target_file) {
   if (request != NULL) {
     Request_delete(request);
@@ -19,7 +42,11 @@ void load_text_file(Response *response, FILE *target_file) {
 
   char *fbuf = (char *)calloc(fsize + 1, sizeof(char));
 
-  fread(fbuf, 1, fsize, target_file);
+  size_t read_size = fread(fbuf, 1, fsize, target_file);
+  if (read_size != (size_t)fsize) {
+    fprintf(stderr, "Warning: fread read %zu bytes, expected %ld bytes\n",
+            read_size, fsize);
+  }
   Response_set_body_as_text(response, fbuf);
   free(fbuf);
 }
@@ -71,13 +98,17 @@ void generate_text_response(char *file_name, FILE *target_file,
 }
 
 long generate_binary_response(char *file_name, FILE *target_file,
-                             Response *response) {
+                              Response *response) {
   fseek(target_file, 0, SEEK_END);
   long fsize = ftell(target_file);
   rewind(target_file);
 
   response->body = (char *)calloc(fsize, sizeof(char));
-  fread(response->body, 1, fsize, target_file);
+  size_t read_size = fread(response->body, 1, fsize, target_file);
+  if (read_size != (size_t)fsize) {
+    fprintf(stderr, "Warning: fread read %zu bytes, expected %ld bytes\n",
+            read_size, fsize);
+  }
 
   strcpy(response->header_values[3].key, "Content-type");
   strcpy(response->header_values[3].value,
@@ -114,11 +145,13 @@ extern int respond(char *request_message, char *root_directory,
   strcat(full_path, request->request_header_values[1].value);
 
   char *resolved_path = (char *)calloc(MAXPATHLEN + 1, sizeof(char));
-  realpath(full_path, resolved_path);
+  char *realpath_result = realpath(full_path, resolved_path);
   free(full_path);
-  if (resolved_path == NULL) {
+  if (realpath_result == NULL) {
     perror("Failed to solve path");
-    exit(1);
+    free(resolved_path);
+    cleanup(request, NULL, NULL);
+    return -1;
   }
 
   char *systime = (char *)calloc(128 + 1, sizeof(char));
@@ -235,8 +268,7 @@ extern int respond(char *request_message, char *root_directory,
     return -1;
   }
 
-  send_message_size =
-      send(response_target_fd, response->body, body_len, 0);
+  send_message_size = send(response_target_fd, response->body, body_len, 0);
   if (send_message_size < 0) {
     return -1;
   }

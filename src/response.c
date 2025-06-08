@@ -1,5 +1,8 @@
 #include "response.h"
 
+const char *HEADER_SEPARATOR = ": ";
+const char *HEADER_LINE_BREAK_CODE = "\r\n";
+
 Response *Response_new() {
   Response *this = (Response *)calloc(1, sizeof(Response));
 

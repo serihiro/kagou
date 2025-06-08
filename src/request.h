@@ -11,10 +11,10 @@ typedef struct {
 #define REQUEST_HEADER_ITEM_MAX_SIZE 10
 #define REQUEST_HEADER_ITEM_STRING_LENGTH 1025 // 1K + 1 chars
 
-static const char *ATTRIBUTE_DELIMITER = " ";
-static const char *HEADER_KEY_METHOD = "method";
-static const char *HEADER_KEY_PATH = "path";
-static const char *HEADER_KEY_HTTP_VERSION = "http_version";
+extern const char *ATTRIBUTE_DELIMITER;
+extern const char *HEADER_KEY_METHOD;
+extern const char *HEADER_KEY_PATH;
+extern const char *HEADER_KEY_HTTP_VERSION;
 
 Request *Request_new(char *raw_request);
 void Request_delete(Request *this);

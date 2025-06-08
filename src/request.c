@@ -1,5 +1,10 @@
 #include "request.h"
 
+const char *ATTRIBUTE_DELIMITER = " ";
+const char *HEADER_KEY_METHOD = "method";
+const char *HEADER_KEY_PATH = "path";
+const char *HEADER_KEY_HTTP_VERSION = "http_version";
+
 Request *Request_new(char *raw_request) {
   Request *this = (Request *)calloc(1, sizeof(Request));
   this->raw_request = (char *)calloc(strlen(raw_request) + 1, sizeof(char));
