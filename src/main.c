@@ -1,8 +1,10 @@
+#define _GNU_SOURCE
 #include "request_handler.h"
 #include <netinet/in.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <sys/uio.h>
@@ -13,30 +15,46 @@
 
 static const char *DEFAULT_ROOT_DIRECTORY = ".";
 
-int accept_socket_fd;
-int request_socket_fd;
+int accept_socket_fd = 0;
+int request_socket_fd = 0;
 
-void sigint_handler() {
-  if (accept_socket_fd) {
+void cleanup_and_exit(int sig) {
+  printf("\nReceived signal %d, cleaning up...\n", sig);
+  fflush(stdout);
+  
+  if (accept_socket_fd > 0) {
+    shutdown(accept_socket_fd, SHUT_RDWR);
     close(accept_socket_fd);
+    accept_socket_fd = 0;
   }
 
-  if (request_socket_fd) {
+  if (request_socket_fd > 0) {
+    shutdown(request_socket_fd, SHUT_RDWR);
     close(request_socket_fd);
+    request_socket_fd = 0;
   }
 
   exit(0);
 }
 
 void init_signal() {
-  struct sigaction sa_sigint;
-  memset(&sa_sigint, 0, sizeof(sa_sigint));
-  sa_sigint.sa_handler = sigint_handler;
-  sa_sigint.sa_flags = SA_RESTART;
-  if (sigaction(SIGINT, &sa_sigint, NULL) < 0) {
-    perror("Failed to bind sigaction\n");
+  struct sigaction sa;
+  memset(&sa, 0, sizeof(sa));
+  sa.sa_handler = cleanup_and_exit;
+  sa.sa_flags = SA_RESTART;
+  
+  // SIGINTハンドラーの設定
+  if (sigaction(SIGINT, &sa, NULL) < 0) {
+    perror("Failed to bind SIGINT handler");
     exit(1);
   }
+  
+  // SIGTERMハンドラーの設定
+  if (sigaction(SIGTERM, &sa, NULL) < 0) {
+    perror("Failed to bind SIGTERM handler");
+    exit(1);
+  }
+  
   signal(SIGPIPE, SIG_IGN);
 }
 
@@ -58,6 +76,14 @@ int main(int argc, char **argv) {
   request_socket_fd = socket(PF_INET, SOCK_STREAM, 0);
   if (request_socket_fd < 0) {
     perror("Failed to create socket\n");
+    exit(1);
+  }
+
+  // SO_REUSEADDRオプションを設定して、ポートの再利用を許可
+  int reuse = 1;
+  if (setsockopt(request_socket_fd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse)) < 0) {
+    perror("Failed to set SO_REUSEADDR");
+    close(request_socket_fd);
     exit(1);
   }
 
@@ -88,7 +114,7 @@ int main(int argc, char **argv) {
 
   int raw_message_size = 0;
   while (1) {
-    int accept_socket_fd =
+    accept_socket_fd =
         accept(request_socket_fd, (struct sockaddr *)&client_address, &len);
     if (accept_socket_fd < 0) {
       close(request_socket_fd);
@@ -100,6 +126,7 @@ int main(int argc, char **argv) {
       raw_message_size = recv(accept_socket_fd, raw_message, 1024, 0);
       if (!raw_message_size || raw_message_size < 0) {
         close(accept_socket_fd);
+        accept_socket_fd = 0;
         break;
       }
 
