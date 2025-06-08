@@ -1,3 +1,4 @@
 *.o
 kagou
 node_modules/
+test-results
