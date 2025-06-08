@@ -56,8 +56,7 @@ void Response_delete(Response *this) {
   if (this->header_values != NULL) {
     for (int i = 0; i < RESPONSE_HEADER_VALUE_SIZE; i++) {
       if (this->header_values[i].key == NULL)
-        break;
-      free(this->header_values[i].key);
+        free(this->header_values[i].key);
       if (this->header_values[i].value != NULL)
         free(this->header_values[i].value);
     }
