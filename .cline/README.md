@@ -39,12 +39,18 @@ make clean && make
 make test
 
 # E2Eテスト
-npm test
+yarn e2e
 ```
 
 ### 3. サーバー起動
 ```bash
 ./kagou [port] [document_root]
+```
+
+### 4. Format
+
+```bash
+make format
 ```
 
 ## コーディング規約
@@ -87,7 +93,7 @@ npm test
 ### デバッグ
 AddressSanitizerが有効なので、メモリ関連のバグは実行時に検出されます：
 ```bash
-./kagou
+./kagou [port] [document_root]
 # メモリエラーがあれば詳細なスタックトレースが表示される
 ```
 
