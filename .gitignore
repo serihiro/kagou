@@ -1,2 +1,3 @@
 *.o
 kagou
+node_modules/

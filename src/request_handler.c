@@ -70,6 +70,40 @@ void generate_text_response(char *file_name, FILE *target_file,
   Response_set_status(response, "HTTP/1.1 200 OK");
 }
 
+long generate_binary_response(char *file_name, FILE *target_file,
+                             Response *response) {
+  fseek(target_file, 0, SEEK_END);
+  long fsize = ftell(target_file);
+  rewind(target_file);
+
+  response->body = (char *)calloc(fsize, sizeof(char));
+  fread(response->body, 1, fsize, target_file);
+
+  strcpy(response->header_values[3].key, "Content-type");
+  strcpy(response->header_values[3].value,
+         content_type_from_filename(file_name));
+  strcpy(response->header_values[4].key, "Content-length");
+  sprintf(response->header_values[4].value, "%ld", fsize);
+
+  Response_set_status(response, "HTTP/1.1 200 OK");
+
+  return fsize;
+}
+
+int file_type_from_filename(char *filename) {
+  char *dot = strrchr(filename, '.');
+  mime_map *map = (mime_map *)MIME_TYPES;
+  if (dot) {
+    while (map->extension) {
+      if (strcmp(map->extension, dot) == 0) {
+        return map->file_type;
+      }
+      map++;
+    }
+  }
+  return FILE_ASCII;
+}
+
 extern int respond(char *request_message, char *root_directory,
                    int response_target_fd) {
   FILE *target_file = NULL;
@@ -135,7 +169,7 @@ extern int respond(char *request_message, char *root_directory,
     return 0;
   }
 
-  target_file = fopen(resolved_path, "r");
+  target_file = fopen(resolved_path, "rb");
   if (target_file == NULL) {
     perror("Failed to fopen target file");
     const char *body = BAD_REQUEST;
@@ -174,11 +208,13 @@ extern int respond(char *request_message, char *root_directory,
   last_strtok(file_name, resolved_path, "/");
   free(resolved_path);
 
-  // TODO functionize
-  if (strstr(file_name, ".html") != NULL || strstr(file_name, ".htm") != NULL ||
-      strstr(file_name, ".js") != NULL || strstr(file_name, ".css") != NULL ||
-      strstr(file_name, ".csv") != NULL) {
+  int file_type = file_type_from_filename(file_name);
+  long body_len = 0;
+  if (file_type == FILE_ASCII) {
     generate_text_response(file_name, target_file, response);
+    body_len = strlen(response->body);
+  } else if (file_type == FILE_BINARY) {
+    body_len = generate_binary_response(file_name, target_file, response);
   } else {
     const char *body = UNSUPPORTED_MEDIA;
     strcpy(response->header_values[3].key, "Content-type");
@@ -188,7 +224,7 @@ extern int respond(char *request_message, char *root_directory,
 
     Response_set_status(response, "HTTP/1.1 415 Unsupported Media Type");
     Response_set_body_as_text(response, body);
-    Response_create_header(response);
+    body_len = strlen(response->body);
   }
   free(file_name);
 
@@ -200,7 +236,7 @@ extern int respond(char *request_message, char *root_directory,
   }
 
   send_message_size =
-      send(response_target_fd, response->body, strlen(response->body), 0);
+      send(response_target_fd, response->body, body_len, 0);
   if (send_message_size < 0) {
     return -1;
   }
