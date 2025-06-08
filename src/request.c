@@ -21,7 +21,13 @@ Request *Request_new(char *raw_request) {
 
 void Request_delete(Request *this) {
   free(this->raw_request);
-  free(this->request_header_values);
+  if (this->request_header_values != NULL) {
+    for (int i = 0; i < REQUEST_HEADER_ITEM_MAX_SIZE; i++) {
+      free(this->request_header_values[i].key);
+      free(this->request_header_values[i].value);
+    }
+    free(this->request_header_values);
+  }
   free(this);
 }
 
@@ -39,4 +45,5 @@ void _Request_scan(Request *this) {
   strcpy(this->request_header_values[2].key, HEADER_KEY_HTTP_VERSION);
   strcpy(this->request_header_values[2].value,
          strtok(NULL, ATTRIBUTE_DELIMITER));
+  free(cpy_message);
 }

@@ -25,16 +25,11 @@ extern void last_strtok(char *ret, char *target, const char *pattern) {
     return;
   }
 
-  char *last_tokenized;
   char *tokenized = strtok(target, pattern);
-  while (1) {
-    tokenized = strtok(NULL, pattern);
-    if (tokenized == NULL) {
-      break;
-    } else {
-      last_tokenized = tokenized;
-    }
+  char *last_tokenized = tokenized;
+  while ((tokenized = strtok(NULL, pattern)) != NULL) {
+    last_tokenized = tokenized;
   }
 
-  strcpy(ret, last_tokenized);
+  strcpy(ret, last_tokenized ? last_tokenized : "");
 }

@@ -36,7 +36,7 @@ void Response_create_header(Response *this) {
   strcat(tmp_header, this->status);
   strcat(tmp_header, HEADER_LINE_BREAK_CODE);
 
-  for (int i = 0; i < (int)sizeof(this->header_values); i++) {
+  for (int i = 0; i < RESPONSE_HEADER_VALUE_SIZE; i++) {
     if (this->header_values[i].key == NULL)
       break;
     strcat(tmp_header, this->header_values[i].key);
@@ -53,6 +53,12 @@ void Response_delete(Response *this) {
   free(this->header);
   free(this->body);
   free(this->status);
-  free(this->header_values);
+  if (this->header_values != NULL) {
+    for (int i = 0; i < RESPONSE_HEADER_VALUE_SIZE; i++) {
+      free(this->header_values[i].key);
+      free(this->header_values[i].value);
+    }
+    free(this->header_values);
+  }
   free(this);
 }
