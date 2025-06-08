@@ -11,6 +11,21 @@ $ make
 $ ./kagou 5000 html
 ```
 
+### E2E tests
+
+Install JavaScript dependencies and browsers using **yarn**:
+
+```
+$ yarn install
+$ yarn playwright install
+```
+
+Run the Playwright tests:
+
+```
+$ yarn e2e
+```
+
 ## Features(including plan)
 
 ### Support media
@@ -19,9 +34,9 @@ $ ./kagou 5000 html
 - [x] css
 - [x] csv
 - [x] json
-- [ ] jpg
-- [ ] png
-- [ ] gif
+- [x] jpg
+- [x] png
+- [x] gif
 
 ### Support options
 - [x] specify port
