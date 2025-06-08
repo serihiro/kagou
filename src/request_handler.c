@@ -167,7 +167,7 @@ extern int respond(char *request_message, char *root_directory,
     strcpy(response->header_values[3].key, "Content-type");
     strcpy(response->header_values[3].value, "text/html");
     strcpy(response->header_values[4].key, "Content-length");
-    sprintf(response->header_values[4].value, "%ld", strlen(body));
+    snprintf(response->header_values[4].value, sizeof(response->header_values[4].value), "%ld", strlen(body));
 
     Response_set_status(response, "HTTP/1.1 404 Not Found");
     Response_set_body_as_text(response, body);
