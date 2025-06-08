@@ -6,9 +6,10 @@
 typedef struct {
   char *raw_request;
   Tuple *request_header_values;
+  int keep_alive; // 1 for keep-alive, 0 for close
 } Request;
 
-#define REQUEST_HEADER_ITEM_MAX_SIZE 10
+#define REQUEST_HEADER_ITEM_MAX_SIZE 20
 #define REQUEST_HEADER_ITEM_STRING_LENGTH 1025 // 1K + 1 chars
 
 extern const char *ATTRIBUTE_DELIMITER;

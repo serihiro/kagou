@@ -158,7 +158,12 @@ extern int respond(char *request_message, char *root_directory,
   strcpy(response->header_values[1].key, "Server");
   strcpy(response->header_values[1].value, SERVER_NAME);
   strcpy(response->header_values[2].key, "Connection");
-  strcpy(response->header_values[2].value, "close"); // FIXME toriisogi
+  // Set Connection header based on request
+  if (request->keep_alive) {
+    strcpy(response->header_values[2].value, "keep-alive");
+  } else {
+    strcpy(response->header_values[2].value, "close");
+  }
   free(systime);
 
   if (realpath_result == NULL) {
@@ -167,7 +172,8 @@ extern int respond(char *request_message, char *root_directory,
     strcpy(response->header_values[3].key, "Content-type");
     strcpy(response->header_values[3].value, "text/html");
     strcpy(response->header_values[4].key, "Content-length");
-    snprintf(response->header_values[4].value, sizeof(response->header_values[4].value), "%ld", strlen(body));
+    snprintf(response->header_values[4].value,
+             RESPONSE_HEADER_ITEM_STRING_LENGTH, "%ld", strlen(body));
 
     Response_set_status(response, "HTTP/1.1 404 Not Found");
     Response_set_body_as_text(response, body);
@@ -187,17 +193,20 @@ extern int respond(char *request_message, char *root_directory,
       return -1;
     }
 
-    // To send FIN
-    int close_result = close(response_target_fd);
-    if (close_result < 0) {
-      free(resolved_path);
-      cleanup(request, response, NULL);
-      return -1;
+    // Only close connection if not keep-alive
+    int keep_alive = request->keep_alive;
+    if (!keep_alive) {
+      int close_result = close(response_target_fd);
+      if (close_result < 0) {
+        free(resolved_path);
+        cleanup(request, response, NULL);
+        return 0; // Return 0 to indicate connection should be closed
+      }
     }
 
     free(resolved_path);
     cleanup(request, response, NULL);
-    return 0;
+    return keep_alive;
   }
 
   struct stat st;
@@ -226,14 +235,18 @@ extern int respond(char *request_message, char *root_directory,
       return -1;
     }
 
-    // To send FIN
-    int close_result = close(response_target_fd);
-    if (close_result < 0) {
-      return -1;
+    // Only close connection if not keep-alive
+    int keep_alive = request->keep_alive;
+    if (!keep_alive) {
+      int close_result = close(response_target_fd);
+      if (close_result < 0) {
+        cleanup(request, response, target_file);
+        return 0; // Return 0 to indicate connection should be closed
+      }
     }
 
     cleanup(request, response, target_file);
-    return 0;
+    return keep_alive;
   }
 
   target_file = fopen(resolved_path, "rb");
@@ -259,16 +272,21 @@ extern int respond(char *request_message, char *root_directory,
       return -1;
     }
 
-    // To send FIN
-    int close_result = close(response_target_fd);
-    if (close_result < 0) {
-      return -1;
+    // Only close connection if not keep-alive
+    int keep_alive = request->keep_alive;
+    if (!keep_alive) {
+      int close_result = close(response_target_fd);
+      if (close_result < 0) {
+        free(resolved_path);
+        cleanup(request, response, target_file);
+        return 0; // Return 0 to indicate connection should be closed
+      }
     }
 
     free(resolved_path);
     cleanup(request, response, target_file);
 
-    return 0;
+    return keep_alive;
   }
 
   char *file_name = calloc(MAXPATHLEN + 1, sizeof(char));
@@ -307,12 +325,16 @@ extern int respond(char *request_message, char *root_directory,
     return -1;
   }
 
-  // To send FIN
-  int close_result = close(response_target_fd);
-  if (close_result < 0) {
-    return -1;
+  // Only close connection if not keep-alive
+  int keep_alive = request->keep_alive;
+  if (!keep_alive) {
+    int close_result = close(response_target_fd);
+    if (close_result < 0) {
+      cleanup(request, response, target_file);
+      return 0; // Return 0 to indicate connection should be closed
+    }
   }
 
   cleanup(request, response, target_file);
-  return 0;
+  return keep_alive;
 }
