@@ -1,6 +1,7 @@
 PROGRAM_NAME = kagou
 CC = gcc
 CFLAGS = -g -O2 -Wall -Wextra -fsanitize=address -I./src
+LDFLAGS = -lssl -lcrypto
 SRCS = $(wildcard src/*.c)
 LIB_SRCS = $(filter-out src/main.c,$(SRCS))
 OBJS=$(SRCS:.c=.o)
@@ -12,7 +13,7 @@ TEST_SRCS = $(wildcard tests/*.c)
 TEST_BINS = $(TEST_SRCS:.c=)
 
 main: $(OBJS)
-	$(CC) $(CFLAGS) -o $(PROGRAM_NAME) $(OBJS)
+	$(CC) $(CFLAGS) -o $(PROGRAM_NAME) $(OBJS) $(LDFLAGS)
 
 main.o: src/main.c request_handler.o util.o request.o response.o
 	$(CC) $(CFLAGS) -c src/main.c
@@ -33,7 +34,7 @@ util.o: src/util.c src/util.h
 
 # Build individual test executables
 tests/%: tests/%.c $(LIB_OBJS) $(HEADERS)
-	$(CC) $(CFLAGS) -o $@ $< $(LIB_OBJS)
+	$(CC) $(CFLAGS) -o $@ $< $(LIB_OBJS) $(LDFLAGS)
 
 # Build all tests
 .PHONY: build-tests
@@ -62,7 +63,7 @@ tests/test.o: tests/test.c $(HEADERS)
 	$(CC) $(CFLAGS) -c tests/test.c -o tests/test.o
 
 tests/run_tests: $(LIB_OBJS) tests/test.o
-	$(CC) $(CFLAGS) -o tests/run_tests $(LIB_OBJS) tests/test.o
+	$(CC) $(CFLAGS) -o tests/run_tests $(LIB_OBJS) tests/test.o $(LDFLAGS)
 
 .PNONY :format
 format:

@@ -1,6 +1,20 @@
 #include "request_handler.h"
 #include <sys/stat.h>
 
+static int connection_write(int fd, SSL *ssl, const void *buf, int len) {
+  if (ssl)
+    return SSL_write(ssl, buf, len);
+  return send(fd, buf, len, 0);
+}
+
+static int connection_close(int fd, SSL *ssl) {
+  if (ssl) {
+    SSL_shutdown(ssl);
+    SSL_free(ssl);
+  }
+  return close(fd);
+}
+
 const char *SERVER_NAME = "kagou";
 const char *HEADER_DATE_FORMAT = "%a, %d %b %Y %H:%M:%S GMT";
 
@@ -137,7 +151,7 @@ int file_type_from_filename(char *filename) {
 }
 
 extern int respond(char *request_message, char *root_directory,
-                   int response_target_fd) {
+                   int response_target_fd, SSL *ssl) {
   FILE *target_file = NULL;
   Request *request = Request_new(request_message);
 
@@ -178,15 +192,15 @@ extern int respond(char *request_message, char *root_directory,
     Response_set_status(response, "HTTP/1.1 404 Not Found");
     Response_set_body_as_text(response, body);
     Response_create_header(response);
-    int send_message_size =
-        send(response_target_fd, response->header, strlen(response->header), 0);
+    int send_message_size = connection_write(
+        response_target_fd, ssl, response->header, strlen(response->header));
     if (send_message_size < 0) {
       free(resolved_path);
       cleanup(request, response, NULL);
       return -1;
     }
-    send_message_size =
-        send(response_target_fd, response->body, strlen(response->body), 0);
+    send_message_size = connection_write(
+        response_target_fd, ssl, response->body, strlen(response->body));
     if (send_message_size < 0) {
       free(resolved_path);
       cleanup(request, response, NULL);
@@ -196,7 +210,7 @@ extern int respond(char *request_message, char *root_directory,
     // Only close connection if not keep-alive
     int keep_alive = request->keep_alive;
     if (!keep_alive) {
-      int close_result = close(response_target_fd);
+      int close_result = connection_close(response_target_fd, ssl);
       if (close_result < 0) {
         free(resolved_path);
         cleanup(request, response, NULL);
@@ -224,13 +238,13 @@ extern int respond(char *request_message, char *root_directory,
     Response_set_status(response, "HTTP/1.1 404 Not Found");
     Response_set_body_as_text(response, body);
     Response_create_header(response);
-    int send_message_size =
-        send(response_target_fd, response->header, strlen(response->header), 0);
+    int send_message_size = connection_write(
+        response_target_fd, ssl, response->header, strlen(response->header));
     if (send_message_size < 0) {
       return -1;
     }
-    send_message_size =
-        send(response_target_fd, response->body, strlen(response->body), 0);
+    send_message_size = connection_write(
+        response_target_fd, ssl, response->body, strlen(response->body));
     if (send_message_size < 0) {
       return -1;
     }
@@ -238,7 +252,7 @@ extern int respond(char *request_message, char *root_directory,
     // Only close connection if not keep-alive
     int keep_alive = request->keep_alive;
     if (!keep_alive) {
-      int close_result = close(response_target_fd);
+      int close_result = connection_close(response_target_fd, ssl);
       if (close_result < 0) {
         cleanup(request, response, target_file);
         return 0; // Return 0 to indicate connection should be closed
@@ -261,13 +275,13 @@ extern int respond(char *request_message, char *root_directory,
     Response_set_status(response, "HTTP/1.1 500 Internal Server Error");
     Response_set_body_as_text(response, body);
     Response_create_header(response);
-    int send_message_size =
-        send(response_target_fd, response->header, strlen(response->header), 0);
+    int send_message_size = connection_write(
+        response_target_fd, ssl, response->header, strlen(response->header));
     if (send_message_size < 0) {
       return -1;
     }
-    send_message_size =
-        send(response_target_fd, response->body, strlen(response->body), 0);
+    send_message_size = connection_write(
+        response_target_fd, ssl, response->body, strlen(response->body));
     if (send_message_size < 0) {
       return -1;
     }
@@ -275,7 +289,7 @@ extern int respond(char *request_message, char *root_directory,
     // Only close connection if not keep-alive
     int keep_alive = request->keep_alive;
     if (!keep_alive) {
-      int close_result = close(response_target_fd);
+      int close_result = connection_close(response_target_fd, ssl);
       if (close_result < 0) {
         free(resolved_path);
         cleanup(request, response, target_file);
@@ -314,13 +328,14 @@ extern int respond(char *request_message, char *root_directory,
   free(file_name);
 
   Response_create_header(response);
-  int send_message_size =
-      send(response_target_fd, response->header, strlen(response->header), 0);
+  int send_message_size = connection_write(
+      response_target_fd, ssl, response->header, strlen(response->header));
   if (send_message_size < 0) {
     return -1;
   }
 
-  send_message_size = send(response_target_fd, response->body, body_len, 0);
+  send_message_size =
+      connection_write(response_target_fd, ssl, response->body, body_len);
   if (send_message_size < 0) {
     return -1;
   }
@@ -328,7 +343,7 @@ extern int respond(char *request_message, char *root_directory,
   // Only close connection if not keep-alive
   int keep_alive = request->keep_alive;
   if (!keep_alive) {
-    int close_result = close(response_target_fd);
+    int close_result = connection_close(response_target_fd, ssl);
     if (close_result < 0) {
       cleanup(request, response, target_file);
       return 0; // Return 0 to indicate connection should be closed
