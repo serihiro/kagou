@@ -7,6 +7,7 @@ Kagouは、C言語で実装された軽量なHTTPサーバーです。静的フ�
 ## 主な機能
 
 - HTTP/1.1プロトコルのサポート
+- HTTPS/TLS 1.2+のサポート（--httpsオプション）
 - 静的ファイルの配信（HTML、CSS、JavaScript、画像ファイルなど）
 - 複数のMIMEタイプのサポート
 - エラーハンドリング（404 Not Found、415 Unsupported Media Type、500 Internal Server Error）
@@ -66,6 +67,9 @@ npm test
 
 # 特定のディレクトリをドキュメントルートとして起動
 ./kagou 8080 /path/to/document/root
+
+# HTTPSを有効にして起動（TLS 1.2+）
+./kagou 8443 /path/to/document/root --https
 ```
 
 ## 開発環境
@@ -85,6 +89,7 @@ npm test
 
 ## 最近の変更
 
+- TLSサポートをTLS 1.0からTLS 1.2以上に更新し、セキュリティを向上
 - ヘッダーファイルの`static`変数を`extern`に変更し、リンケージの問題を解決
 - `fread`と`realpath`の戻り値チェックを追加し、エラーハンドリングを改善
 - メモリリークの防止とエラー時の適切なクリーンアップを実装
