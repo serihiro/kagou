@@ -37,8 +37,10 @@ typedef struct {
 } mime_map;
 
 // Returns 1 if connection should be kept alive, 0 if it should be closed
+#include <openssl/ssl.h>
+
 extern int respond(char *request_message, char *root_directory,
-                   int response_target_fd);
+                   int response_target_fd, SSL *ssl);
 char *content_type_from_filename(char *filename);
 void generate_text_response(char *file_name, FILE *target_file,
                             Response *response);
