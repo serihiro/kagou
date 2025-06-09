@@ -9,7 +9,7 @@ $ git clone git@github.com:serihiro/kagou.git
 $ cd Kagou
 $ make
 $ ./kagou 5000 html
-# enable HTTPS on port 8443 using TLS1.0
+# enable HTTPS on port 8443 using TLS 1.2+
 $ ./kagou 8443 html --https
 ```
 

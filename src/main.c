@@ -79,6 +79,7 @@ int main(int argc, char **argv) {
   for (int i = 2; i < argc; i++) {
     if (strcmp(argv[i], "--https") == 0) {
       use_tls = 1;
+      puts("TLS 1.2+ is available");
     } else {
       strncpy(root_directory, argv[i], ROOT_DIRECTORY_STRING_LENGTH - 1);
       root_directory[ROOT_DIRECTORY_STRING_LENGTH - 1] = '\0'; // Ensure null termination
@@ -93,8 +94,7 @@ int main(int argc, char **argv) {
     SSL_load_error_strings();
     const SSL_METHOD *method = TLS_server_method();
     ssl_ctx = SSL_CTX_new(method);
-    SSL_CTX_set_min_proto_version(ssl_ctx, TLS1_VERSION);
-    SSL_CTX_set_max_proto_version(ssl_ctx, TLS1_VERSION);
+    SSL_CTX_set_min_proto_version(ssl_ctx, TLS1_2_VERSION);
     if (!ssl_ctx) {
       ERR_print_errors_fp(stderr);
       exit(1);
