@@ -80,7 +80,8 @@ int main(int argc, char **argv) {
     if (strcmp(argv[i], "--https") == 0) {
       use_tls = 1;
     } else {
-      strcpy(root_directory, argv[i]);
+      strncpy(root_directory, argv[i], ROOT_DIRECTORY_STRING_LENGTH - 1);
+      root_directory[ROOT_DIRECTORY_STRING_LENGTH - 1] = '\0'; // Ensure null termination
     }
   }
 
