@@ -35,7 +35,7 @@ jobs:
       run: yarn install
     
     - name: Install Playwright browsers
-      run: yarn playwright install
+      run: yarn playwright install --with-deps chromium
     
     - name: Run C unit tests
       run: make test
