@@ -10,7 +10,7 @@ typedef struct {
 } Request;
 
 #define REQUEST_HEADER_ITEM_MAX_SIZE 20
-#define REQUEST_HEADER_ITEM_STRING_LENGTH 1025 // 1K + 1 chars
+#define REQUEST_HEADER_ITEM_STRING_LENGTH 257  // 256 + 1 chars (sufficient for most headers)
 
 extern const char *ATTRIBUTE_DELIMITER;
 extern const char *HEADER_KEY_METHOD;
