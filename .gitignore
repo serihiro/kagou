@@ -4,3 +4,5 @@ node_modules/
 test-results
 tests/run_tests
 tests/test
+.claude/settings.local.json
+
