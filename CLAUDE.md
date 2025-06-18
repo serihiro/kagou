@@ -85,6 +85,7 @@ yarn e2e              # Run E2E tests
 - Indentation: 2 spaces
 - All error conditions must be handled
 - Use `extern` for shared variables in headers (not `static`)
+- Add a linebreak at the end of each file.
 
 ## Testing Structure
 

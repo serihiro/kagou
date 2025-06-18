@@ -1,0 +1,44 @@
+name: Test
+
+on:
+  push:
+    paths:
+      - '**/*.c'
+      - '**/*.h'
+      - 'e2e/**/*.js'
+  pull_request:
+    paths:
+      - '**/*.c'
+      - '**/*.h'
+      - 'e2e/**/*.js'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential libssl-dev
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'yarn'
+        cache-dependency-path: yarn.lock
+    
+    - name: Install yarn dependencies
+      run: yarn install
+    
+    - name: Install Playwright browsers
+      run: yarn playwright install --with-deps chromium
+    
+    - name: Run C unit tests
+      run: make test
+    
+    - name: Run E2E tests
+      run: yarn e2e
