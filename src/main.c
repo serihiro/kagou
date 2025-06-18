@@ -13,8 +13,8 @@
 #include <sys/uio.h>
 #include <unistd.h>
 
-#define ROOT_DIRECTORY_STRING_LENGTH 4097     // 4k + 1
-#define REQUEST_MESSAGE_STRING_LENGTH 1024001 // 1M + 1
+#define ROOT_DIRECTORY_STRING_LENGTH PATH_MAX + 1    // PATH_MAX + 1 (typically 4096+1)
+#define REQUEST_MESSAGE_STRING_LENGTH 8193           // 8K + 1 (sufficient for HTTP requests)
 
 static const char *DEFAULT_ROOT_DIRECTORY = ".";
 

@@ -11,8 +11,8 @@ typedef struct {
 } Response;
 
 #define RESPONSE_HEADER_VALUE_SIZE 10
-#define RESPONSE_HEADER_ITEM_STRING_LENGTH 1025    // 1k + 1 chars
-#define RESPONSE_HEADER_BUFFER_STRING_LENGTH 10241 // 10k + 1 chars
+#define RESPONSE_HEADER_ITEM_STRING_LENGTH 257     // 256 + 1 chars (sufficient for most headers)
+#define RESPONSE_HEADER_BUFFER_STRING_LENGTH 2049  // 2k + 1 chars (sufficient for response headers)
 extern const char *HEADER_SEPARATOR;
 extern const char *HEADER_LINE_BREAK_CODE;
 
