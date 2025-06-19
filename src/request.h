@@ -9,8 +9,13 @@ typedef struct {
   int keep_alive; // 1 for keep-alive, 0 for close
 } Request;
 
-#define REQUEST_HEADER_ITEM_MAX_SIZE 20
-#define REQUEST_HEADER_ITEM_STRING_LENGTH 257  // 256 + 1 chars (sufficient for most headers)
+#define MAX_HTTP_HEADERS 20
+#define HTTP_HEADER_STRING_MAX_LENGTH                                          \
+  257 // 256 + 1 chars (sufficient for most headers)
+
+// Backward compatibility aliases
+#define REQUEST_HEADER_ITEM_MAX_SIZE MAX_HTTP_HEADERS
+#define REQUEST_HEADER_ITEM_STRING_LENGTH HTTP_HEADER_STRING_MAX_LENGTH
 
 extern const char *ATTRIBUTE_DELIMITER;
 extern const char *HEADER_KEY_METHOD;

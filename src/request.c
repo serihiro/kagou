@@ -2,6 +2,12 @@
 #include <ctype.h>
 #include <strings.h>
 
+#define DEFAULT_HTTP_VERSION                                                   \
+  "HTTP/0.9" // Default HTTP version for malformed requests
+#define HTTP_VERSION_HEADER_INDEX                                              \
+  2                   // Index in request_header_values for HTTP version
+#define CRLF_LENGTH 2 // Length of "\r\n" sequence
+
 const char *ATTRIBUTE_DELIMITER = " ";
 const char *HEADER_KEY_METHOD = "method";
 const char *HEADER_KEY_PATH = "path";
@@ -139,7 +145,7 @@ void _Request_scan(Request *this) {
     strcpy(this->request_header_values[header_index].key,
            HEADER_KEY_HTTP_VERSION);
     strcpy(this->request_header_values[header_index].value,
-           "HTTP/0.9"); // Assume HTTP/0.9
+           DEFAULT_HTTP_VERSION);
 
     free(request_line);
     this->keep_alive = 0;
@@ -161,10 +167,11 @@ void _Request_scan(Request *this) {
 
     strcpy(this->request_header_values[header_index].key,
            HEADER_KEY_HTTP_VERSION);
-    strcpy(this->request_header_values[header_index].value, "HTTP/0.9");
+    strcpy(this->request_header_values[header_index].value,
+           DEFAULT_HTTP_VERSION);
     header_index++;
 
-    http_version = "HTTP/0.9";
+    http_version = DEFAULT_HTTP_VERSION;
   } else {
     *path_end = '\0';
     char *version_start = path_end + 1;
@@ -182,7 +189,7 @@ void _Request_scan(Request *this) {
     strcpy(this->request_header_values[header_index].value, version_start);
     header_index++;
 
-    http_version = this->request_header_values[2].value;
+    http_version = this->request_header_values[HTTP_VERSION_HEADER_INDEX].value;
   }
 
   free(request_line);
@@ -195,7 +202,7 @@ void _Request_scan(Request *this) {
   }
 
   // Move to headers section
-  current_line = line_end + 2; // Skip \r\n
+  current_line = line_end + CRLF_LENGTH; // Skip \r\n
 
   // Parse headers
   while (*current_line != '\0' && header_index < REQUEST_HEADER_ITEM_MAX_SIZE) {
@@ -245,6 +252,6 @@ void _Request_scan(Request *this) {
     }
 
     free(header_line);
-    current_line = line_end + 2; // Move to next line
+    current_line = line_end + CRLF_LENGTH; // Move to next line
   }
 }
