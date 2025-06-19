@@ -9,7 +9,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#define HEADER_BUFFER 1024
+#define HTTP_HEADER_BUFFER_SIZE 1024 // Header buffer size
 #define FILE_BINARY 0
 #define FILE_ASCII 1
 

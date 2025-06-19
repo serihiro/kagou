@@ -1,5 +1,7 @@
 #include "./util.h"
 
+#define TIME_FORMAT_BUFFER_SIZE 128 // Buffer size for formatted time string
+
 struct tm *local_time() {
   struct tm *t_st;
   time_t tt;
@@ -12,7 +14,7 @@ struct tm *local_time() {
 
 extern void formated_system_datetime(char *ret, const char *format) {
   struct tm *t_st;
-  char buf[128];
+  char buf[TIME_FORMAT_BUFFER_SIZE];
 
   t_st = local_time();
   strftime(buf, sizeof(buf), format, t_st);

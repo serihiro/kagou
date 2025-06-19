@@ -13,8 +13,16 @@
 #include <sys/uio.h>
 #include <unistd.h>
 
-#define ROOT_DIRECTORY_STRING_LENGTH PATH_MAX + 1    // PATH_MAX + 1 (typically 4096+1)
-#define REQUEST_MESSAGE_STRING_LENGTH 8193           // 8K + 1 (sufficient for HTTP requests)
+#define ROOT_DIRECTORY_STRING_LENGTH                                           \
+  PATH_MAX + 1 // PATH_MAX + 1 (typically 4096+1)
+#define REQUEST_MESSAGE_STRING_LENGTH                                          \
+  8193                                // 8K + 1 (sufficient for HTTP requests)
+#define MIN_ARGC_REQUIRED 2           // Minimum command line arguments required
+#define OPTIONAL_ARGS_START_INDEX 2   // Starting index for optional arguments
+#define SOCKET_REUSE_ENABLED 1        // Value to enable SO_REUSEADDR
+#define LISTEN_BACKLOG_SIZE 5         // Socket listen queue size
+#define SOCKET_TIMEOUT_SECONDS 5      // Socket timeout in seconds
+#define SOCKET_TIMEOUT_MICROSECONDS 0 // Microseconds part of timeout
 
 static const char *DEFAULT_ROOT_DIRECTORY = ".";
 
@@ -69,20 +77,21 @@ void init_signal() {
 }
 
 int main(int argc, char **argv) {
-  if (argc < 2) {
+  if (argc < MIN_ARGC_REQUIRED) {
     puts("Usage: /path/to/binary <port> [root_directory] [--https]");
     exit(1);
   }
   char *root_directory =
       (char *)calloc(ROOT_DIRECTORY_STRING_LENGTH, sizeof(char));
   strcpy(root_directory, DEFAULT_ROOT_DIRECTORY);
-  for (int i = 2; i < argc; i++) {
+  for (int i = OPTIONAL_ARGS_START_INDEX; i < argc; i++) {
     if (strcmp(argv[i], "--https") == 0) {
       use_tls = 1;
       puts("TLS 1.2+ is available");
     } else {
       strncpy(root_directory, argv[i], ROOT_DIRECTORY_STRING_LENGTH - 1);
-      root_directory[ROOT_DIRECTORY_STRING_LENGTH - 1] = '\0'; // Ensure null termination
+      root_directory[ROOT_DIRECTORY_STRING_LENGTH - 1] =
+          '\0'; // Ensure null termination
     }
   }
 
@@ -116,7 +125,7 @@ int main(int argc, char **argv) {
   }
 
   // SO_REUSEADDRオプションを設定して、ポートの再利用を許可
-  int reuse = 1;
+  int reuse = SOCKET_REUSE_ENABLED;
   if (setsockopt(request_socket_fd, SOL_SOCKET, SO_REUSEADDR, &reuse,
                  sizeof(reuse)) < 0) {
     perror("Failed to set SO_REUSEADDR");
@@ -136,7 +145,7 @@ int main(int argc, char **argv) {
     exit(1);
   }
 
-  int listen_result = listen(request_socket_fd, 5);
+  int listen_result = listen(request_socket_fd, LISTEN_BACKLOG_SIZE);
   if (listen_result < 0) {
     perror("Failed to listen\n");
     exit(1);
@@ -174,8 +183,8 @@ int main(int argc, char **argv) {
 
     // Set socket timeout for keep-alive connections
     struct timeval timeout;
-    timeout.tv_sec = 5; // 5 seconds timeout
-    timeout.tv_usec = 0;
+    timeout.tv_sec = SOCKET_TIMEOUT_SECONDS;
+    timeout.tv_usec = SOCKET_TIMEOUT_MICROSECONDS;
     setsockopt(accept_socket_fd, SOL_SOCKET, SO_RCVTIMEO, &timeout,
                sizeof(timeout));
 
