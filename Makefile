@@ -1,7 +1,24 @@
 PROGRAM_NAME = kagou
 CC = gcc
-CFLAGS = -g -O2 -Wall -Wextra -fsanitize=address -I./src
-LDFLAGS = -lssl -lcrypto
+
+# OS detection and OpenSSL configuration
+UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S),Darwin)
+    # macOS with Homebrew OpenSSL
+    OPENSSL_ROOT := $(shell brew --prefix openssl 2>/dev/null)
+    ifneq ($(OPENSSL_ROOT),)
+        CFLAGS = -g -O2 -Wall -Wextra -fsanitize=address -I./src -I$(OPENSSL_ROOT)/include
+        LDFLAGS = -L$(OPENSSL_ROOT)/lib -lssl -lcrypto
+    else
+        # Fallback if brew is not available
+        CFLAGS = -g -O2 -Wall -Wextra -fsanitize=address -I./src
+        LDFLAGS = -lssl -lcrypto
+    endif
+else
+    # Linux and other Unix systems
+    CFLAGS = -g -O2 -Wall -Wextra -fsanitize=address -I./src
+    LDFLAGS = -lssl -lcrypto
+endif
 SRCS = $(wildcard src/*.c)
 LIB_SRCS = $(filter-out src/main.c,$(SRCS))
 OBJS=$(SRCS:.c=.o)
